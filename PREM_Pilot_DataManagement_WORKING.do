@@ -62,8 +62,6 @@ numlabel, add
 
 * G. MINIMUM data quality check 
 
-* H. Progress check 
-
 **************************************************************
 * A. SETTING 
 **************************************************************
@@ -156,6 +154,13 @@ export delimited using "$datadir/LimeSurvey_PREM_`country'_R`round'_$date.csv", 
 		
 export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Client_raw_data") sheetreplace firstrow(variables) nolabel
 
+*****Drop refused cases? No keep them for process metrics 
+
+	/*
+	tab Q403a Q403b, m
+	drop if Q403a==2 | Q403b==2
+	*/
+	
 *****B.4. Drop duplicate cases 
 /*
 	codebook id 		
@@ -877,6 +882,9 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 
 		gen xcomplete=q403==1
 	
+		tab q403 zdistrict, m
+		bysort zdistrict: tab mode language, m
+	
 *****E.2. Export clean facility-level data to chart book 
 	
 	sort clientid
@@ -1093,32 +1101,5 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 	bysort mode: sum mq*		
 	
 log close
-
-**************************************************************
-* G. Progress check
-**************************************************************
-
-capture log close
-log using "$statalog/ProgressCheck_PREM_`country'_R`round'_$date.log", replace
-
-use "$datadir/PREM_`country'_R`round'.dta", clear
-
-*** 1. Interview results
 	
-	* Overall
-	tab mode if xcomplete==1
-	
-	* By date
-	tab submitdate mode if xcomplete==1	
-
-*** 2. Interview results - detail 
-	
-	tab q403 mode, m col
-
-*** 3. Call results if phone interviews
-
-	*tab a011 a100 if a001==1, m col
-
-log close
-	
-END OF DATA CLEANING AND MANAGEMENT 
+*END OF DATA CLEANING AND MANAGEMENT 
