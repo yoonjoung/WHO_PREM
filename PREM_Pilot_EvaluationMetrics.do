@@ -12,7 +12,7 @@ numlabel, add
 
 *This code 
 *1) runs the data management do file **BOTH FILES MUST BE IN THE SAME DIRECTORY**
-*2) calculates process metrics for the PREMs pilot
+*2) calculates process metrics for evaluation of the PREMs pilot implementation 
 *3) produces outputs 
 *		=====> DARK GRAY tab in Chartbook: "Pilot_Implementation"
 
@@ -48,12 +48,12 @@ cd "~/Dropbox/0iSquared/iSquared_WHO/PREM/DataAnalysis/"
 *global chartbookdir "C:\Users\ctaylor\World Health Organization\BANICA, Sorin - HSA unit\2 Global goods & tools\2 HFAs\1 HFAs for COVID-19\4. Implementation support materials\4. Analysis and dashboards\"
 global chartbookdir "~/Dropbox/0iSquared/iSquared_WHO/PREM/DataAnalysis/"
 
-*** Define a directory for processed data files (can be same or different from the main directory)
-*global chartbookdir "C:\Users\ctaylor\World Health Organization\BANICA, Sorin - HSA unit\2 Global goods & tools\2 HFAs\1 HFAs for COVID-19\4. Implementation support materials\4. Analysis and dashboards\"
+*** Define a directory for PROCESSED data files (can be same or different from the main directory)
+*global datadir "C:\Users\ctaylor\World Health Organization\BANICA, Sorin - HSA unit\2 Global goods & tools\2 HFAs\1 HFAs for COVID-19\4. Implementation support materials\4. Analysis and dashboards\"
 global datadir "~/Dropbox/0iSquared/iSquared_WHO/PREM/DataAnalysis/DataProduced/"
 
 *** Define a directory for stata log files (can be same or different from the main directory)
-*global chartbookdir "C:\Users\ctaylor\World Health Organization\BANICA, Sorin - HSA unit\2 Global goods & tools\2 HFAs\1 HFAs for COVID-19\4. Implementation support materials\4. Analysis and dashboards\"
+*global statalog "C:\Users\ctaylor\World Health Organization\BANICA, Sorin - HSA unit\2 Global goods & tools\2 HFAs\1 HFAs for COVID-19\4. Implementation support materials\4. Analysis and dashboards\"
 global statalog "~/Dropbox/0iSquared/iSquared_WHO/PREM/DataAnalysis/StataLog/"
 
 *** Define local macro for the survey 
