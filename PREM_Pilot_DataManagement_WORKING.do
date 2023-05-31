@@ -595,7 +595,7 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		
 	rename *, lower
 
-		capture drop target_sample_size
+		capture drop target_sample_size mode language
 		d
 
 		/* this worksheet has background characteristics of the sentinel facilites.

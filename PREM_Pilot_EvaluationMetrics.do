@@ -217,7 +217,17 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 		
 	use temp.dta, clear
 	
-		replace submitdate = substr(submitdate, 1, 10)
+		tab submitdate
+				
+		gen submit_date = day(dofc(submitdate))
+		gen submit_month = month(dofc(submitdate))
+			tostring(submit_date), replace
+			tostring(submit_month), replace
+			tab submit_date submit_month, m
+			
+		drop submitdate
+		gen submitdate = submit_month + "/" + submit_date
+		tab submitdate
 			
 	collapse (count) num_* , ///
 		by(country round month year studyarm submitdate)

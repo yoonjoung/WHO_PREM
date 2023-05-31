@@ -34,12 +34,16 @@ global DownloadedCSV "~/Dropbox/0iSquared/iSquared_WHO/PREM/DataAnalysis/Exporte
 	foreach var of varlist submitdate{		
 	set seed 38
 		generate random = runiform()
-		replace `var' = "2022-09-16 23:59:15" if random<=0.15
-		replace `var' = "2022-09-17 23:59:15" if random>0.15 & random<=0.30
-		replace `var' = "2022-09-18 23:59:15" if random>0.30 & random<=0.45
-		replace `var' = "2022-09-19 23:59:15" if random>0.45 & random<=0.60
-		replace `var' = "2022-09-20 23:59:15" if random>0.60 & random<=0.75
-		replace `var' = "2022-09-21 23:59:15" if random>0.75 
+		replace `var' = "2023-05-16 23:59:15" if random<=0.10
+		replace `var' = "2023-05-17 23:59:15" if random>0.10 & random<=0.20
+		replace `var' = "2023-05-18 23:59:15" if random>0.20 & random<=0.30
+		replace `var' = "2023-05-19 23:59:15" if random>0.30 & random<=0.40
+		replace `var' = "2023-05-22 23:59:15" if random>0.40 & random<=0.50
+		replace `var' = "2023-05-23 23:59:15" if random>0.50 & random<=0.60
+		replace `var' = "2023-05-24 23:59:15" if random>0.60 & random<=0.70
+		replace `var' = "2023-05-25 23:59:15" if random>0.70 & random<=0.80
+		replace `var' = "2023-05-26 23:59:15" if random>0.80 & random<=0.90
+		replace `var' = "2023-05-29 23:59:15" if random>0.90 
 		drop random 
 	}
 		
@@ -56,9 +60,9 @@ global DownloadedCSV "~/Dropbox/0iSquared/iSquared_WHO/PREM/DataAnalysis/Exporte
 	sort id temp
 	list id submitdate if temp>1
 
-		replace submitdate = "2022-09-16 23:59:15" if temp>1
-		replace submitdate = "2022-09-17 23:59:15" if temp>1 & id==id[_n-1]
-		replace submitdate = "2022-09-18 23:59:15" if temp>1 & id==id[_n-2]
+		replace submitdate = "2023-05-16 23:59:15" if temp>1
+		replace submitdate = "2023-05-17 23:59:15" if temp>1 & id==id[_n-1]
+		replace submitdate = "2023-05-18 23:59:15" if temp>1 & id==id[_n-2]
 		
 		tab temp submitdate, m		
 		drop temp
