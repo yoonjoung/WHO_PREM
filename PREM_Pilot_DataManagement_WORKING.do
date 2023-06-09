@@ -13,20 +13,25 @@ numlabel, add
 *This code 
 *1) imports and cleans dataset from Lime Survey, and 
 *2) creates indicator estimate data for dashboards and chartbook. 
-*		=====> PURPLE Tab in Chartbook: "PREMs_estimates"
+*		=====> First PURPLE Tab in Chartbook: "PREMs_estimates"
 *3) conducts minimum data quality check 
 
-*  DATA IN:	CSV file daily downloaded from Limesurvey 	
+*  DATA IN:	
+*		1. CSV file daily downloaded from Limesurvey 	
+*		2. facility sample information in Chartbook (ORANGE TAB)
+
 *  DATA OUT: 
 *		1. raw data (as is, downloaded from Limesurvey) 
-*			=> CSV, dta, and green tab in Chartbook  	
-*		2. cleaned data with additional analytical variables in Chartbook and, for further analyses, as a datafile 
-*			=> CSV, dta, and blue tab in Chartbook  	
-*		3. summary estimates of indicators in Chartbook and, for dashboards, as a datafile 	
-*			=> CSV, dta, and the first purple tab in Chartbook  	
-*  NOTE OUT to log file for minimum data quality check  
+*			=> CSV, dta, and GREEN TAB in Chartbook   	
+*		2. cleaned data with additional analytical variables in Chartbook and, 
+*			for further analyses, as a datafile 
+*			=> CSV, dta, and BLUE TAB in Chartbook 
+*		3. summary estimates of indicators in Chartbook and as a datafile 	
+*			=> CSV, dta, and the first PURPLE TAB in Chartbook 
+
+*  NOTE OUT (log file for minimum data quality check)  
 *		1. DataCheck_CombinedCOVID19HFA_`country'_R`round'_$date.log
-*		2. ProgressCheck_PREM_`country'_R`round'_$date.log
+
 
 /* TABLE OF CONTENTS*/
 
@@ -66,23 +71,18 @@ numlabel, add
 **************************************************************
 
 *** Directory for this do file 
-*cd "C:\Users\ctaylor\World Health Organization\BANICA, Sorin - HSA unit\2 Global goods & tools\2 HFAs\1 HFAs for COVID-19\4. Implementation support materials\4. Analysis and dashboards\"
 cd "~/Dropbox/0iSquared/iSquared_WHO/PREM/DataAnalysis/"
 
 *** Directory for downloaded CSV data (can be same or different from the main directory)
-*global downloadcsvdir "C:\Users\ctaylor\World Health Organization\BANICA, Sorin - HSA unit\2 Global goods & tools\2 HFAs\1 HFAs for COVID-19\4. Implementation support materials\4. Analysis and dashboards\DownloadedCSV\"
 global downloadcsvdir "~/Dropbox/0iSquared/iSquared_WHO/PREM/DataAnalysis/ExportedCSV_FromLimeSurvey/"
 
 *** Define a directory for the chartbook (can be same or different from the main directory)
-*global chartbookdir "C:\Users\ctaylor\World Health Organization\BANICA, Sorin - HSA unit\2 Global goods & tools\2 HFAs\1 HFAs for COVID-19\4. Implementation support materials\4. Analysis and dashboards\"
 global chartbookdir "~/Dropbox/0iSquared/iSquared_WHO/PREM/DataAnalysis/"
 
 *** Define a directory for processed data files (can be same or different from the main directory)
-*global chartbookdir "C:\Users\ctaylor\World Health Organization\BANICA, Sorin - HSA unit\2 Global goods & tools\2 HFAs\1 HFAs for COVID-19\4. Implementation support materials\4. Analysis and dashboards\"
 global datadir "~/Dropbox/0iSquared/iSquared_WHO/PREM/DataAnalysis/DataProduced/"
 
 *** Define a directory for stata log files (can be same or different from the main directory)
-*global chartbookdir "C:\Users\ctaylor\World Health Organization\BANICA, Sorin - HSA unit\2 Global goods & tools\2 HFAs\1 HFAs for COVID-19\4. Implementation support materials\4. Analysis and dashboards\"
 global statalog "~/Dropbox/0iSquared/iSquared_WHO/PREM/DataAnalysis/StataLog/"
 
 *** Define local macro for the survey 
@@ -102,7 +102,7 @@ local geoname2	 		 Baltimore
 local geoname3	 		 Harford
 local geoname4	 		 Somerset
 
-local type1 			 District Hostpital /*Facility type*/
+local type1 			 District Hospital /*Facility type*/
 local type2 			 Health Center 
 local type3 			 Health Post
 
@@ -258,7 +258,7 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Cli
 		*****confirm there's no duplicate cases, based on facility code
 		duplicates report A004 A005 A006 A007,
 		*****CHECK HERE: 
-		*		Now there should be no duplicate, yay!!   
+		*	Now there should be no duplicate, yay!!   
 
 		drop duplicate submitdatelatest
 		
@@ -623,7 +623,7 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 	
 		tab _merge
 		*****CHECK HERE: 
-		*		all should be 3 (i.e., match) by the end of the data collection*/
+		*	all should be 3 (i.e., match) by the end of the data collection*/
 
 		drop _merge*
 
@@ -945,21 +945,12 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 		collapse (count) obs (mean) x* (mean) y_* yy_* yyy_* , ///
 			by(country round month year  )
 			
-			gen mode="Both modes"
-			gen language="Both languages"
+			gen mode="All modes"
+			gen language="All languages"
 		
-			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
-			
-*** By language and mode			
-
-		use temp.dta, clear
-		collapse (count) obs (mean) x* (mean) y_* yy_* yyy_* , ///
-			by(country round month year language mode )
-			
-			append using "$datadir/summary_PREM_`country'_R`round'.dta"	, force	
-			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
-			
-*** In each mode and language, by subgroup
+			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 	
+	
+/*** By language and by mode: overall and by subgroup
 
 	foreach designvar of varlist mode language{
 	
@@ -979,16 +970,61 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 			
 			append using "$datadir/summary_PREM_`country'_R`round'.dta"	, force	
 			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
+		restore
+		}
+	}
+*/
+
+*** By language AND mode (study arm): overall and by subgroup			
+
+		use temp.dta, clear
+		collapse (count) obs (mean) x* (mean) y_* yy_* yyy_* , ///
+			by(country language mode round month year )
+			
+			append using "$datadir/summary_PREM_`country'_R`round'.dta"	, force	
+			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
+
+		use temp.dta, clear		
+		foreach subgroupvar of varlist zage zgender zedu zdepression zdistrict ztype zsector{
+		
+		preserve
+		collapse (count) obs (mean) x* (mean) y_* yy_* yyy_*, ///
+			by(country language mode round month year `subgroupvar')
+			
+			append using "$datadir/summary_PREM_`country'_R`round'.dta"	, force	
+			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
 
 			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
 		restore
-	}
-	}
+		}
+		
+*** By district: overall and by subgroup			
+
+		use temp.dta, clear
+		collapse (count) obs (mean) x* (mean) y_* yy_* yyy_* , ///
+			by(country language mode zdistrict round month year )
+			
+			append using "$datadir/summary_PREM_`country'_R`round'.dta"	, force	
+			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
+
+		use temp.dta, clear		
+		foreach subgroupvar of varlist zage zgender zedu zdepression ztype zsector{
+		
+		preserve
+		collapse (count) obs (mean) x* (mean) y_* yy_* yyy_*, ///
+			by(country language mode zdistrict round month year `subgroupvar')
+			
+			append using "$datadir/summary_PREM_`country'_R`round'.dta"	, force	
+			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
+
+			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
+		restore
+		}		
 	
 	use "$datadir/summary_PREM_`country'_R`round'.dta", clear
 		
-			replace language = "Both languages" if language=="" & mode!=""
-			replace mode = "Both modes" if language!="" & mode==""
+			*replace language = "All languages" if language=="" & mode!=""
+			*replace mode = "All modes" if language!="" & mode==""
 		
 		gen group="All"
 		gen grouplabel="All"
@@ -997,9 +1033,10 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 			replace group="Clients' Gender" if zgender!=.
 			replace group="Clients' Education" if zedu!=.
 			replace group="WHO-5 wellbeing score" if zdepression!=.
-			replace group="District" if zdistrict!=.
 			replace group="Facility type" if ztype!=.
-			replace group="Facility managing authority" if zsector!=.
+			replace group="Facility managing authority" if zsector!=.			
+			replace group="District_" + group if zdistrict!=. & group!="All" /*by subgroup within district*/
+			replace group="District" if zdistrict!=. & group=="All" 
 	
 			replace grouplabel="18-39" 	if zage==1
 			replace grouplabel="40+" 	if zage==2
@@ -1013,66 +1050,95 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 
 			replace grouplabel="WHO-5 score <=50"	if zdepression==0
 			replace grouplabel="WHO-5 score >50" 	if zdepression==1			
-		
-			replace grouplabel="`geoname1'" if zdistrict==1
-			replace grouplabel="`geoname2'" if zdistrict==2
-			replace grouplabel="`geoname3'" if zdistrict==3
-			replace grouplabel="`geoname4'" if zdistrict==4
-		
+
 			replace grouplabel="`type1'" if ztype==1
 			replace grouplabel="`type2'" if ztype==2
 			replace grouplabel="`type3'" if ztype==3
 		
 			replace grouplabel="`sector1'"	if zsector==1
 			replace grouplabel="`sector2'" 	if zsector==2
-			
-		keep obs country language mode round month year  group* x*  y_* yy_* yyy_*
 
-		save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
-		
-	erase temp.dta	
-		
+			replace grouplabel="`geoname1'_" + grouplabel if zdistrict==1 & grouplabel!="All" /*by subgroup within district*/
+			replace grouplabel="`geoname2'_" + grouplabel if zdistrict==2 & grouplabel!="All" /*by subgroup within district*/
+			replace grouplabel="`geoname3'_" + grouplabel if zdistrict==3 & grouplabel!="All" /*by subgroup within district*/
+			replace grouplabel="`geoname4'_" + grouplabel if zdistrict==4 & grouplabel!="All" /*by subgroup within district*/
+			
+			replace grouplabel="`geoname1'" if zdistrict==1 & grouplabel=="All"
+			replace grouplabel="`geoname2'" if zdistrict==2 & grouplabel=="All"
+			replace grouplabel="`geoname3'" if zdistrict==3 & grouplabel=="All"
+			replace grouplabel="`geoname4'" if zdistrict==4 & grouplabel=="All"
+				
+		keep obs country language mode round month year  group* x*  y_* yy_* yyy_* z*
+				
 	***** convert proportion to %		
-	foreach var of varlist x* {
-		replace `var'=round(`var'*100, 1)	
-		}
+		foreach var of varlist x* {
+			replace `var'=round(`var'*100, 1)	
+			}
 		
 	***** trim decimal points 
-	foreach var of varlist y_* {
-		replace `var'=round(`var', 0.1)	
-		format `var' %2.1f
-		}		
-		
-	foreach var of varlist yy_* yyy_* {
-		replace `var'=round(`var', 1)	
-		format `var' %2.0f
-		}				
+		foreach var of varlist y_* {
+			replace `var'=round(`var', 0.1)	
+			format `var' %2.1f
+			}		
+			
+		foreach var of varlist yy_* yyy_* {
+			replace `var'=round(`var', 1)	
+			format `var' %2.0f
+			}				
 
 	***** assess n, and suppress if estimates are based on small n
-		
-	list mode language group grouplabel obs if obs<20
+	* We will pick an acceptable and widely used but still arbitrary number. 
+	* 25 as used in the DHS final report
+	* https://dhsprogram.com/data/Guide-to-DHS-Statistics/Analyzing_DHS_Data.htm
+	
+		*****CHECK HERE: 
+		sum obs, detail
+		histogram obs, w(5)	freq ///
+			xline(`r(p50)', lcolor(red)) xline(25, lcolor(blue)) ///
+			title("Distribution of denominator size") ///
+			xtitle("Number of observations in denominator") ///
+			note("Red vertical line: median" "Blue vertical line: 25")
+		*	Check the distribution. Figure out what rows have a small N
 
-	foreach var of varlist x_* y_* yy_* yyy_* {
-		*replace `var' =. if obs<20
-		replace `var' =. if grouplabel=="Other/NoResponse"
-	}
+		list mode language group grouplabel obs if regexm(grouplabel, "Other/NoResponse")
+		list mode language group grouplabel obs if obs<25
+
+		foreach var of varlist x_* y_* yy_* yyy_* {
+			replace `var' =. if obs<25
+			*replace `var' =. if regexm(grouplabel, "Other/NoResponse")
+		}
 	
-	***** string mode and replace grouplabel 
+	***** replace grouplabel and check duplicates
 	
-	replace grouplabel = mode + "_" + language + "_" + grouplabel 
-		
-		codebook grouplabel
+		replace grouplabel = language + "_" + mode + "_" + group + "_" + grouplabel 
+			
+		*****CHECK HERE: 
+		duplicates tag grouplabel, gen(duplicate)
+		tab duplicate
+		* 	Ensure grouplabel is unique for every row 
+		* 	There will be duplicate if each districts has a unique study arm (e.g., Ghana) 
+		*	YJ to experiment with a simplier design...???
+				
+			sort grouplabel
+			list language mode grouplabel z* obs if duplicate>0
+					
+			* Drop duplicates: 
+			drop if grouplabel == grouplabel[_n-1]
+			codebook grouplabel
+			drop duplicate
+			drop z*
 				
 	***** order columns
-	order country round year month language mode group grouplabel obs 
+		order country round year month language mode group grouplabel obs 
 	
 	***** sort rows
-	sort country round year month language mode group grouplabel 
+		sort country round year month language mode group grouplabel 
 		
 save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
 		
 export delimited using "$datadir/summary_PREM_`country'_R`round'.csv", replace 
 
+erase temp.dta	
 *****F.2. Export indicator estimate data to chartbook AND dashboard
 
 use "$datadir/summary_PREM_`country'_R`round'.dta", clear
@@ -1085,7 +1151,7 @@ use "$datadir/summary_PREM_`country'_R`round'.dta", clear
 
 export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("PREMs_estimates") sheetreplace firstrow(variables) nolabel keepcellfmt
 
-* - only for YJ
+/* - only for YJ
 * To check against R results 
 export delimited using "$datadir/summary_PREM_`country'_R`round'_Stata.csv", replace 
 */
@@ -1124,8 +1190,10 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 				gen byte m`var' = `var'==.
 			}
 			
-	collapse (sum) mq* , by(country mode)
-	bysort mode: sum mq*		
+			gen obs=1
+			
+	collapse (count) obs (sum) mq* , by(country language mode)
+	bysort language mode: sum obs mq*		
 	
 log close
 	

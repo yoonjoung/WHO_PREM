@@ -429,7 +429,7 @@ bysort A001: tab Q403b A011, m
 	
 export delimited using "$DownloadedCSV/LimeSurvey_PREM_EXAMPLE.csv", replace
 
-END OF DO FILE		
+END OF CREATION	
 		
 /*	
 **************************************************************

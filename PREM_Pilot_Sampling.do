@@ -21,9 +21,12 @@ numlabel, add
 *		2. facility sampling design info (ORANGE TAB from the chartbook) 
  
 *  DATA OUT: 
-*		1. Listing process monitoring log: "ListingCheck_PREM_`country'_R`round'_$date.log"
-*		3. Listing process data: List of all clients attempted for recruitment/listing 
-*		2. Final sample data: List of sampled clients with their phone numbers and study design info
+*		1. Listing process monitoring log: 
+*			"ListingCheck_PREM_`country'_R`round'_$date.log"
+*		2. Listing process data: 
+*			List of all clients attempted for recruitment/listing 
+*		3. Final sample data: List of sampled clients with their phone numbers 
+*			and study design information
 
 /* TABLE OF CONTENTS*/
 
@@ -89,7 +92,7 @@ local geoname2	 		 Baltimore
 local geoname3	 		 Harford
 local geoname4	 		 Somerset
 
-local type1 			 District Hostpital /*Facility type*/
+local type1 			 District Hospital /*Facility type*/
 local type2 			 Health Center 
 local type3 			 Health Post
 
@@ -184,7 +187,7 @@ save temp.dta, replace
 import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_sample") firstrow clear 
 		
 	rename *, lower
-
+		
 		d
 
 		/* this worksheet has background characteristics of the sentinel facilites.
@@ -192,18 +195,20 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		
 		Contains data
 		  obs:            36                          
-		 vars:             5                          
-		 size:           216                          
-		--------------------------------------------------------------------------------------------
+		 vars:             7                          
+		 size:           648                          
+		--------------------------------------------------------------------------------------------------------------------------------------
 					  storage   display    value
 		variable name   type    format     label      variable label
-		--------------------------------------------------------------------------------------------
+		--------------------------------------------------------------------------------------------------------------------------------------
 		facilityid      int     %10.0g                facilityid
 		district        byte    %10.0g                district
 		facility_type   byte    %10.0g                facility_type
 		managing_auth~y byte    %10.0g                managing_authority
 		target_sample~e byte    %10.0g                target_sample_size
-		--------------------------------------------------------------------------------------------
+		mode_design     str5    %9s                   mode_design
+		language_design str7    %9s                   language_design
+		--------------------------------------------------------------------------------------------------------------------------------------
 
 	*/ 
 	
@@ -215,8 +220,23 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		tab _merge
 				
 		*****CHECK HERE: 
+		
+		/*
+			
+			.                 tab _merge
+
+		 _merge |      Freq.     Percent        Cum.
+	------------+-----------------------------------
+			  1 |         32        4.37        4.37
+			  3 |        700       95.63      100.00
+	------------+-----------------------------------
+		  Total |        732      100.00
+
+		*/
+		
 		*		all should be 3 (i.e., match) by the end of the listing*/
 		*		until then there will be 1 (facilities with no listing) and 3*/
+		
 		keep if _merge==3 /*for practice purposes*/
 		
 		drop _merge*
@@ -285,14 +305,22 @@ use "$listingdatadir/PREM_`country'_R`round'_LIST.dta", clear
 	gen num_listed = 1 if name!="" & number1!=""
 	gen num_listed_twonumbers = 1 if name!="" & (number1==number2)
 	
+	gen numfacilities = 1
+	
 	save temp.dta, replace 
 	
 ***** E.2 collapse by district 
 capture log close
 log using "$statalog/ListingCheck_PREM_`country'_R`round'_$date.log", replace
 
-	*Date
+	*Date and total screened for listing
 	tab updatedate
+	
+	*Number of facilities conducted listing by district
+	use temp.dta, clear
+		
+		collapse (mean) numfacilities, by(district facilityid)
+		tab district, m
 	
 	*By district, number of listing progress in detail
 	use temp.dta, clear
@@ -303,13 +331,25 @@ log using "$statalog/ListingCheck_PREM_`country'_R`round'_$date.log", replace
 	*By district and facility, number of listing progress in detail
 	use temp.dta, clear
 		
-		collapse (count) num_*, by(district facilityid type)
-		bysort district type facilityid: list num_*
+		collapse (count) num_* (mean) target_sample_size, by(district facilityid type)
+		bysort district type facilityid: list num_* target
 
 log close
 
 erase temp.dta
 
+/*
+capture putdocx clear 
+putdocx begin
+putdocx paragraph
+putdocx text ("Listing progress: `today'"),  linebreak	
+
+putdocx paragraph
+putdocx table stable = (1,10), title("Listing by facility")  
+putdocx table table = data(district type facilityid num_* target_sample_size ) 
+
+putdocx save "$statalog/ListingProgress_$date.docx", replace
+*/
 **************************************************************
 * F. Sampling 
 **************************************************************
