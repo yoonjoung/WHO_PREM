@@ -86,12 +86,13 @@ global datadir "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/4_DataAnalysis/Dat
 global statalog "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/4_DataAnalysis/StataLog/"
 
 *** Define local macro for the survey 
+
 local country	 		 EXAMPLE /*country name*/	
 local round 			 1 /*round*/		
 local year 			 	 2023 /*year of the mid point in data collection*/	
 local month 			 6 /*month of the mid point in data collection*/	
 
-local surveyid 			 259237 /*LimeSurvey survey ID*/
+local surveyid 			 872833 /*LimeSurvey survey ID*/
 
 *** Define local macro for response options specific to the country 
 
@@ -109,14 +110,14 @@ local type3 			 Health Post
 local sector1 			 Public /*Managing authority*/
 local sector2 			 Non Public 		
 
-local service1 			 Service A /*ServiceArea*/		
+local service1 			 Service A /*Service Area*/		
 local service2 			 Service B
 local service3 			 Service C 
 		
 *** local macro for analysis (no change needed)  
-local today=c(current_date)
-local c_today= "`today'"
-global date=subinstr("`c_today'", " ", "",.)
+local today		= c(current_date)
+local c_today	= "`today'"
+global date		= subinstr("`c_today'", " ", "",.)
 
 **************************************************************
 * B. Import and drop duplicate cases
