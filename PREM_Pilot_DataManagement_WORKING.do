@@ -5,8 +5,9 @@ capture log close
 set more off
 numlabel, add
 
-* Date of the PREM questionniare version: WHO PREMÏs questionnaire_19May2023_facility
-* Date of last code update: 5/30/2023
+* Date of the PREM questionniare version: Questionnaire_8SEPT2023_WORKING
+* https://worldhealthorg-my.sharepoint.com/:w:/r/personal/banicag_who_int/_layouts/15/Doc.aspx?sourcedoc=%7BA1DE21BB-2BD1-4F22-B36B-4B4EBC0AE145%7D&file=Questionnaire_8SEPT2023_WORKING.docx&action=default&mobileredirect=true
+* Date of last code update: 9/12/2023
 *	https://github.com/yoonjoung/WHO_PREM
 *	https://github.com/yoonjoung/WHO_PREM/blob/main/PREM_Pilot_DataManagement_WORKING.do
 
@@ -144,7 +145,7 @@ import delimited "$downloadcsvdir/LimeSurvey_PREM_EXAMPLE.csv", case(preserve) c
 *****B.2. Export/save the data daily in CSV form with date 	
 
 export delimited using "$datadir/LimeSurvey_PREM_`country'_R`round'_$date.csv", replace
-	
+
 *****B.3. Export the data to chartbook  	
 
 	/*MASK idenitifiable information for respondents/interviewers.*/
@@ -422,13 +423,15 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Cli
 	global varlist_rate5 "q136"	
 	global varlist_rate5na "q130"	
 	global varlist_yesnonanotsure "q134 q135"
-		
+	global varlist_yesnodk "q101a q101b q102"
+	
 	sum $varlist_5
 	sum $varlist_5na
 	sum $varlist_rate5
 	sum $varlist_rate5na
 	sum $varlist_yesnonanotsure
-
+	sum $varlist_yesnodk
+	
 	#delimit;	
 	
 	lab define howmany
@@ -446,8 +449,10 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Cli
 		2 "2.No"
 		3 "3.Don't know"
 		;
-	lab values q102 yesnodk; 	
-
+	foreach var of varlist $varlist_yesnodk {;		
+	lab values `var' varlist_yesnodk; 
+	};
+	
 	lab define varlist_5
 		1 "1.Never"
 		2 "2.Rarely"
@@ -709,11 +714,19 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 			replace language = "`countrylanguage1'" if q402==2
 			
 	*****************************
-	* Cover + Section 3 
+	* Cover + Section 3 + Q101A/B
 	*****************************
 	
 	***** basic variables for disaggregated analysis 
 		
+		gen zcare = .
+			replace zcare = 1 if q101a==1 & q101b==1 
+			replace zcare = 2 if q101a==1 & q101b!=1
+			replace zcare = 3 if q101a!=1 & q101b==1
+			tabstat q101a q101b, by(zcare) stats(min max)
+			lab define zcare 1 "both patient & caregiver" 2 "only patient" 3 "only caregiver"
+			lab values zcare zcare
+			
 		egen zage = cut(q301), at(18 40 99)
 			codebook zage
 			tabstat q301, by(zage) stats(min max)
@@ -909,7 +922,7 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 	*****************************
 
 		gen xcomplete=q403==1
-	
+		
 		tab q403 zdistrict, m
 		bysort zdistrict: tab mode language, m
 	
@@ -950,7 +963,7 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 			gen language="All languages"
 		
 			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 	
-	
+
 /*** By language and by mode: overall and by subgroup
 
 	foreach designvar of varlist mode language{
@@ -981,17 +994,17 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 		use temp.dta, clear
 		collapse (count) obs (mean) x* (mean) y_* yy_* yyy_* , ///
 			by(country language mode round month year )
-			
+	
 			append using "$datadir/summary_PREM_`country'_R`round'.dta"	, force	
 			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
 
 		use temp.dta, clear		
-		foreach subgroupvar of varlist zage zgender zedu zdepression zdistrict ztype zsector{
+		foreach subgroupvar of varlist zcare zage zgender zedu zdepression zdistrict ztype zsector{
 		
 		preserve
 		collapse (count) obs (mean) x* (mean) y_* yy_* yyy_*, ///
 			by(country language mode round month year `subgroupvar')
-			
+		
 			append using "$datadir/summary_PREM_`country'_R`round'.dta"	, force	
 			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
 
@@ -1009,7 +1022,7 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
 
 		use temp.dta, clear		
-		foreach subgroupvar of varlist zage zgender zedu zdepression ztype zsector{
+		foreach subgroupvar of varlist zcare zage zgender zedu zdepression ztype zsector{
 		
 		preserve
 		collapse (count) obs (mean) x* (mean) y_* yy_* yyy_*, ///
@@ -1030,6 +1043,7 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 		gen group="All"
 		gen grouplabel="All"
 			
+			replace group="Clients' care seeking" if zcare!=.
 			replace group="Clients' Age" if zage!=.
 			replace group="Clients' Gender" if zgender!=.
 			replace group="Clients' Education" if zedu!=.
@@ -1039,6 +1053,10 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 			replace group="District_" + group if zdistrict!=. & group!="All" /*by subgroup within district*/
 			replace group="District" if zdistrict!=. & group=="All" 
 	
+			replace grouplabel="Both patient & caregiver" 	if zcare==1
+			replace grouplabel="Only patient" 	if zcare==2
+			replace grouplabel="Only caregiver" 	if zcare==3
+			
 			replace grouplabel="18-39" 	if zage==1
 			replace grouplabel="40+" 	if zage==2
 
@@ -1102,6 +1120,7 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 		*	Check the distribution. Figure out what rows have a small N
 
 		list mode language group grouplabel obs if regexm(grouplabel, "Other/NoResponse")
+		list mode language group grouplabel obs if regexm(grouplabel, "Only")
 		list mode language group grouplabel obs if obs<25
 
 		foreach var of varlist x_* y_* yy_* yyy_* {
@@ -1152,7 +1171,7 @@ use "$datadir/summary_PREM_`country'_R`round'.dta", clear
 
 export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("PREMs_estimates") sheetreplace firstrow(variables) nolabel keepcellfmt
 
-/* - only for YJ
+* - only for YJ
 * To check against R results 
 export delimited using "$datadir/summary_PREM_`country'_R`round'_Stata.csv", replace 
 */
@@ -1168,8 +1187,11 @@ log using "$statalog/DataCheck_PREM_`country'_R`round'_$date.log", replace
 
 *** 1. Estimates exceeding boundaries 
 
-use "$datadir/summary_PREM_`country'_R`round'.dta", clear	
+*WHAT DO THEY SUGGEST? Error(s) in analysis code. 
+*ACTION: review and revise the code
 
+use "$datadir/summary_PREM_`country'_R`round'.dta", clear	
+	
 	/*
 	Estimates for percent or score (0-100) that exceed boundaris.  
 	For example, xdrug_100 MUST BE BETWEEN 0 and 100.  
@@ -1180,22 +1202,129 @@ use "$datadir/summary_PREM_`country'_R`round'.dta", clear
 			foreach var of varlist x* {
 				list group grouplabel `var' if `var'<0 | (`var'>100 & `var'!=.)
 			}			
-
+	
 *** 2. Excessive missing/NA
- 	
+
+*WHAT DO THEY SUGGEST? Data entry error by interviewers or respodent's poor partcipation 
+*ACTION: monitor and improve interviewer performance 
+	
 use "$datadir/PREM_`country'_R`round'.dta", clear
+log off
+	/*
+	generate mock up missing values for practice purposes
+	when you work with the real data, delete rows between 
+	"*CREATING MISSING DATA STARTS" and "*CREATING MISSING DATA ENDS"
+	*/
+	*CREATING MISSING DATA STARTS
+	capture drop random 	
+	set seed 75	
+		generate random = runiform()  
+		foreach var of varlist q13* {
+		replace `var'=. if random>0.98 
+		replace `var'=. if random>0.48 & random<=0.50
+		replace `var'=. if random<0.02
+		}
+		foreach var of varlist q2*{
+		replace `var'=. if random<0.07 , 
+		}		
+		foreach var of varlist q3*{
+		replace `var'=. if random<0.03 
+		}		
+	*CREATING MISSING DATA ENDS	
 
-	/*count number of missing responses */
+	/*count number of missing responses*/
+	keep if xcomplete==1
 
-			foreach var of varlist q103 - q205 {
-				gen byte m`var' = `var'==.
+			foreach var of varlist q101a q101b q3* {
+				gen byte mbasic`var' = `var'==.
+			}						
+			foreach var of varlist q103 - q137 {
+				gen byte mprem`var' = `var'==.
 			}
+			foreach var of varlist q2* {
+				gen byte mwho5`var' = `var'==.
+			}			
+			global itemlist "basic prem who5"
+			foreach item in $itemlist{	
+				egen totalm`item'= rowtotal(m`item'*)
+				}				
+			egen totalm = rowtotal(mbasic* mprem* mwho5*)
+			gen byte evermissing = totalm>=1
 			
 			gen obs=1
+
+log on
+ 			
+	*QUESTION: 
+	*1. What proportion of respondents have at least one missing responses? 
+	preserve	
+	collapse (count) obs (mean) evermissing, by(country language mode)
+	list
+	restore
+	
+	*2. What is the average number of missing responses in an interview? 
+	preserve
+	collapse (count) obs (mean) totalm* , by(country language mode)
+	list 
+	restore
+	
+	*QUESTION: 
+	*3. Is missing concentrated in particular respondents? 
+	*4. What is the highest number of missing responses in an interview? 
+	preserve
+	collapse (count) obs (max) totalm*, by(country language mode)
+	list
+	restore
+	
+	*QUESTION: 
+	*5. Are there particular questions that drive missing responses?  	
+	*6. What is the total number of missing responses in each question? 
+	collapse (count) obs (sum) mbasic* mprem* mwho5*, by(country language mode)
+	bysort language mode: list
+	
+*** 3. Inconsistency between study language and reported interview language
+
+*WHAT DO THEY SUGGEST? Data entry error by interviewers, or actual deviation from the study design  
+*ACTION: 
+*	1. Investigate if it's actual deviation or an error.
+*	2. Monitor and improve interviewer performance.  
+ 	
+use "$datadir/PREM_`country'_R`round'.dta", clear
+log off
+	/*
+	generate mock up mismatch values for practice purposes
+	when you work with the real data, delete rows between 
+	"*CREATING MISMATCH DATA STARTS" and "*CREATING MISMATCH DATA ENDS"
+	*/
+	*CREATING MISMATCH DATA STARTS
+	tab a004 q402, m 
+	capture drop random 	
+	set seed 75	
+		generate random = runiform()  
+		recode q402 1=2 2=1 if random>0.97 /*make data entry error*/
+		drop random
+		tab a004 q402, m
+	*CREATING MISMATCH DATA ENDS
+	
+	/*count number of mistmatch*/
+	keep if xcomplete==1
+
+		tab district language, m
+		tab a004 q402, m
+		bysort a004: sum q402
 			
-	collapse (count) obs (sum) mq* , by(country language mode)
-	bysort language mode: sum obs mq*		
+		egen langmode = mode(q402), by(district) 
+		bysort a004: sum q402 langmode
+			
+		gen byte il = q402!=langmode
+						
+		gen obs=1
+
+log on
+		
+	collapse (count) obs (sum) il* , by(country district)
+	list		
 	
 log close
 	
-*END OF DATA CLEANING AND MANAGEMENT 
+END OF DATA CLEANING AND MANAGEMENT 

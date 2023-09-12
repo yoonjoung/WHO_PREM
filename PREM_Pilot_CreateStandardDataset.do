@@ -7,18 +7,17 @@ numlabel, add
 
 *This code creates "Model" datasets for the PREMs data. 
 *	Country name = EXAMPLE
-*	To test Q version 2023-March: https://worldhealthorg-my.sharepoint.com/:w:/r/personal/banicag_who_int/Documents/HSA%20unit/2%20Global%20goods%20%26%20tools/5%20HSPA%20toolkit/4%20Patient%20and%20provider%20surveys/1%20PREMs/Survey%20drafts/Questionnaire/WHO%20PREMs%20questionnaire_March2023_facility_clean.docx?d=w5791e3cf5a124133b77fb25e1f7fe66d&csf=1&web=1&e=gXpicN
-
+*	To test Q version: Questionnaire_8SEPT2023_WORKING
+* 	https://worldhealthorg-my.sharepoint.com/:w:/r/personal/banicag_who_int/_layouts/15/Doc.aspx?sourcedoc=%7BA1DE21BB-2BD1-4F22-B36B-4B4EBC0AE145%7D&file=Questionnaire_8SEPT2023_WORKING.docx&action=default&mobileredirect=true
 
 **************************************************************
 * Part A. SETTING 
 **************************************************************
 
 *** Directory for this do file 
-cd "~/Dropbox/0iSquared/iSquared_WHO/PREM/DataAnalysis/"
-
+cd "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/4_DataAnalysis/"
 *** Define the Downloaded CSV folderes 
-global DownloadedCSV "~/Dropbox/0iSquared/iSquared_WHO/PREM/DataAnalysis/ExportedCSV_FromLimeSurvey/"
+global downloadcsvdir "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/4_DataAnalysis/ExportedCSV_FromLimeSurvey/"
 
 **************************************************************
 * Part B. Create observartions and duplicates
@@ -222,6 +221,7 @@ A007	SERIAL NUMBER OF THE CLIENT 
 
 	#delimit;	
 	global itemlist "
+		Q101A Q101B Q101C
 		Q101 Q102 Q103 Q104 Q105 Q106 Q107 Q108 Q109 Q110 
 		Q111 Q112 Q113 Q114 Q115 Q116 Q117 Q118 Q119 Q120
 		Q121 Q122 Q123 Q124 Q125 Q126 Q127 Q128 Q129 Q130 
@@ -232,6 +232,30 @@ A007	SERIAL NUMBER OF THE CLIENT 
 		gen `item' = . 
 		}
 
+	foreach var of varlist Q101A {
+	set seed 38	
+		generate random = runiform()
+		replace `var' = 1 if random<=0.70
+		replace `var' = 2 if random>0.70 & random<=0.98
+		replace `var' = 3 if random>0.98
+		drop random 
+	}
+
+	foreach var of varlist Q101B {
+	set seed 83
+		generate random = runiform()
+		replace `var' = 1 if random<=0.70
+		replace `var' = 2 if random>0.70 & random<=0.98
+		replace `var' = 3 if random>0.98
+		drop random 
+	}
+		
+		tab Q101A Q101B, m
+		replace Q101A = 1 if Q101A!=1 & Q101B!=1
+		tab Q101A Q101B, m
+
+	replace Q101C = 2	
+	
 	foreach var of varlist Q101 {
 	set seed 38	
 		generate random = runiform()
@@ -355,7 +379,7 @@ A007	SERIAL NUMBER OF THE CLIENT 
 	gen Q402=.
 		replace Q402=1 if A004==1 | A004==2 /*ENGLISH district*/
 		replace Q402=2 if A004==3 | A004==4 /*COUNTRY LANGUAGE district*/
-			
+	
 	gen Q403a = . 
 		replace Q403a = 1 if A001==2 & Q001==1
 		replace Q403a = 2 if A001==2 & Q001==2
@@ -427,7 +451,7 @@ bysort A001: tab Q403b A011, m
 * Part G. Export in CSV
 **************************************************************
 	
-export delimited using "$DownloadedCSV/LimeSurvey_PREM_EXAMPLE.csv", replace
+export delimited using "$downloadcsvdir/LimeSurvey_PREM_EXAMPLE.csv", replace
 
 END OF CREATION	
 		
@@ -436,7 +460,7 @@ END OF CREATION
 * Part H. Create another version with different submitdate with seconds
 **************************************************************
 
-import delimited "$DownloadedCSV/LimeSurvey_CombinedHFA_EXAMPLE_R3.csv", case(preserve) clear
+import delimited "$downloadcsvdir/LimeSurvey_CombinedHFA_EXAMPLE_R3.csv", case(preserve) clear
 	
 	gen seconds = runiformint(10, 59)	
 	tostring seconds, replace 
@@ -446,6 +470,6 @@ import delimited "$DownloadedCSV/LimeSurvey_CombinedHFA_EXAMPLE_R3.csv", case(pr
 	*list submitdate seconds test
 	drop seconds test
 	
-export delimited using "$DownloadedCSV/LimeSurvey_CombinedHFA_EXAMPLE_R3_V2.csv", replace
+export delimited using "$downloadcsvdir/LimeSurvey_CombinedHFA_EXAMPLE_R3_V2.csv", replace
 	
 END OF DO FILE 
