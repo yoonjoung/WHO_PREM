@@ -7,7 +7,7 @@ numlabel, add
 
 * Date of the PREM questionniare version: Questionnaire_8SEPT2023_WORKING
 * https://worldhealthorg-my.sharepoint.com/:w:/r/personal/banicag_who_int/_layouts/15/Doc.aspx?sourcedoc=%7BA1DE21BB-2BD1-4F22-B36B-4B4EBC0AE145%7D&file=Questionnaire_8SEPT2023_WORKING.docx&action=default&mobileredirect=true
-* Date of last code update: 9/12/2023
+* Date of last code update: 9/14/2023
 *	https://github.com/yoonjoung/WHO_PREM
 *	https://github.com/yoonjoung/WHO_PREM/blob/main/PREM_Pilot_DataManagement_WORKING.do
 
@@ -423,7 +423,7 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Cli
 	global varlist_rate5 "q136"	
 	global varlist_rate5na "q130"	
 	global varlist_yesnonanotsure "q134 q135"
-	global varlist_yesnodk "q101a q101b q102"
+	global varlist_yesnodk "q100a q100b q102"
 	
 	sum $varlist_5
 	sum $varlist_5na
@@ -686,7 +686,7 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 	*****************************
 		
 		/*
-		gen double facilityid = q101
+		* a005 has been renamed as facilityid
 		lab var facilityid "facility ID from sample list" 
 		*/
 		
@@ -714,16 +714,16 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 			replace language = "`countrylanguage1'" if q402==2
 			
 	*****************************
-	* Cover + Section 3 + Q101A/B
+	* Cover + Section 3 + q100a/B
 	*****************************
 	
 	***** basic variables for disaggregated analysis 
 		
 		gen zcare = .
-			replace zcare = 1 if q101a==1 & q101b==1 
-			replace zcare = 2 if q101a==1 & q101b!=1
-			replace zcare = 3 if q101a!=1 & q101b==1
-			tabstat q101a q101b, by(zcare) stats(min max)
+			replace zcare = 1 if q100a==1 & q100b==1 
+			replace zcare = 2 if q100a==1 & q100b!=1
+			replace zcare = 3 if q100a!=1 & q100b==1
+			tabstat q100a q100b, by(zcare) stats(min max)
 			lab define zcare 1 "both patient & caregiver" 2 "only patient" 3 "only caregiver"
 			lab values zcare zcare
 			
@@ -1235,7 +1235,7 @@ log off
 	/*count number of missing responses*/
 	keep if xcomplete==1
 
-			foreach var of varlist q101a q101b q3* {
+			foreach var of varlist q100a q100b q3* {
 				gen byte mbasic`var' = `var'==.
 			}						
 			foreach var of varlist q103 - q137 {

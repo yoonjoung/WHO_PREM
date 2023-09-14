@@ -221,7 +221,7 @@ A007	SERIAL NUMBER OF THE CLIENT 
 
 	#delimit;	
 	global itemlist "
-		Q101A Q101B Q101C
+		Q100A Q100B 
 		Q101 Q102 Q103 Q104 Q105 Q106 Q107 Q108 Q109 Q110 
 		Q111 Q112 Q113 Q114 Q115 Q116 Q117 Q118 Q119 Q120
 		Q121 Q122 Q123 Q124 Q125 Q126 Q127 Q128 Q129 Q130 
@@ -232,7 +232,7 @@ A007	SERIAL NUMBER OF THE CLIENT 
 		gen `item' = . 
 		}
 
-	foreach var of varlist Q101A {
+	foreach var of varlist Q100A {
 	set seed 38	
 		generate random = runiform()
 		replace `var' = 1 if random<=0.70
@@ -241,7 +241,7 @@ A007	SERIAL NUMBER OF THE CLIENT 
 		drop random 
 	}
 
-	foreach var of varlist Q101B {
+	foreach var of varlist Q100B {
 	set seed 83
 		generate random = runiform()
 		replace `var' = 1 if random<=0.70
@@ -250,11 +250,9 @@ A007	SERIAL NUMBER OF THE CLIENT 
 		drop random 
 	}
 		
-		tab Q101A Q101B, m
-		replace Q101A = 1 if Q101A!=1 & Q101B!=1
-		tab Q101A Q101B, m
-
-	replace Q101C = 2	
+		tab Q100A Q100B, m
+		replace Q100A = 1 if Q100A!=1 & Q100B!=1
+		tab Q100A Q100B, m
 	
 	foreach var of varlist Q101 {
 	set seed 38	
