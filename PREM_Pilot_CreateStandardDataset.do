@@ -261,8 +261,7 @@ A007	SERIAL NUMBER OF THE CLIENT 
 		replace `var' = 2 if random>0.05 & random<=0.50
 		replace `var' = 3 if random>0.50 & random<=0.80
 		replace `var' = 4 if random>0.80 & random<=0.90
-		replace `var' = 5 if random>0.90 & random<=0.95
-		replace `var' = 6 if random>0.95
+		replace `var' = 5 if random>0.90 
 		drop random 
 	}				
 	

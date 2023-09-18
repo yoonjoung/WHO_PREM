@@ -6,8 +6,9 @@ set more off
 numlabel, add
 
 * Date of the PREM questionniare version: Questionnaire_8SEPT2023_WORKING
+*	https://worldhealthorg-my.sharepoint.com/:w:/r/personal/banicag_who_int/_layouts/15/Doc.aspx?sourcedoc=%7BA1DE21BB-2BD1-4F22-B36B-4B4EBC0AE145%7D&file=Questionnaire_8SEPT2023_WORKING.docx&wdLOR=c2F996D4A-4A15-9D4B-A8F6-4242767CAB35&action=default&mobileredirect=true
 * https://worldhealthorg-my.sharepoint.com/:w:/r/personal/banicag_who_int/_layouts/15/Doc.aspx?sourcedoc=%7BA1DE21BB-2BD1-4F22-B36B-4B4EBC0AE145%7D&file=Questionnaire_8SEPT2023_WORKING.docx&action=default&mobileredirect=true
-* Date of last code update: 9/14/2023
+* Date of last code update: 9/18/2023
 *	https://github.com/yoonjoung/WHO_PREM
 *	https://github.com/yoonjoung/WHO_PREM/blob/main/PREM_Pilot_DataManagement_WORKING.do
 
@@ -415,32 +416,35 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Cli
 		          q103 q104 q105 q106 q107 q108 q109 q110 
 		q111                q115 q116 q117 q118 q119 q120
 		q121 q122 q123 q124 q125 q126 q127 q128 q129 
-		q131 q132 q133 	              q137
+		q131 q132 q133 	         q136
 		" ;
 		#delimit cr
 		
-	global varlist_5na "q112 q113 q114 "		
-	global varlist_rate5 "q136"	
+	global varlist_5na "q112 q114 "		
+	global varlist_5dk "q113 "		
+	global varlist_rate5 "q137"	
 	global varlist_rate5na "q130"	
-	global varlist_yesnonanotsure "q134 q135"
-	global varlist_yesnodk "q100a q100b q102"
+	global varlist_yessometimesnonanotsure "q134"
+	global varlist_yesnonotsure "q135"
+	global varlist_yesnodk "q100a q100b q102 q113"
 	
 	sum $varlist_5
 	sum $varlist_5na
+	sum $varlist_5dk
 	sum $varlist_rate5
 	sum $varlist_rate5na
-	sum $varlist_yesnonanotsure
+	sum $varlist_yessometimesnonanotsure
+	sum $varlist_yesnonotsure
 	sum $varlist_yesnodk
-	
+		
 	#delimit;	
 	
 	lab define howmany
-		1 "1.None"
-		2 "2.Once"
-		3 "3.Twice"
-		4 "4.Three times"
-		5 "5.Four times"
-		6 "6.Five times or more"	
+		1 "1.Once"
+		2 "2.Twice"
+		3 "3.Three times"
+		4 "4.Four times"
+		5 "5.Five times or more"	
 		;
 	lab values q101 howmany; 
 	
@@ -474,7 +478,19 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Cli
 		;
 	foreach var of varlist $varlist_5na {;		
 	lab values `var' varlist_5na; 
-	};	
+	};
+	
+	lab define varlist_5dk
+		1 "1.Never"
+		2 "2.Rarely"
+		3 "3.Sometimes"
+		4 "4.Often"
+		5 "5.Always"
+		6 "6.Don't know"
+		;
+	foreach var of varlist $varlist_5dk {;		
+	lab values `var' varlist_5dk; 
+	};
 	
 	lab define varlist_rate5
 		1 "1.Very bad"
@@ -499,15 +515,25 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Cli
 	lab values `var' varlist_rate5na; 
 	};		
 	
-	lab define yesnonanotsure 
+	lab define yessometimesnonanotsure 
 		1"1.Yes" 
-		2"2.No" 
-		3"3.N/A"
-		4"4.Not sure"
+		2"2.Sometimes" 
+		3"3.No"
+		4"4.N/A"
+		5"5.Not sure"
 		; 
-	foreach var of varlist $varlist_yesnonanotsure {;
-	lab values `var' yesnonanotsure; 
-	};
+	foreach var of varlist $varlist_yessometimesnonanotsure {;
+	lab values `var' yessometimesnonanotsure; 
+	};	
+	
+	lab define yesnonotsure 
+		1"1.Yes" 
+		2"2.No"
+		3"3.Not sure"
+		; 
+	foreach var of varlist $varlist_yesnonotsure  {;
+	lab values `var' yesnonotsure ; 
+	};		
 	
 	#delimit cr
 
@@ -767,7 +793,7 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 			/*REVERSE ORDER*/
 			recode y_fc_notdiff (0=5) (1=4) (2=3) (3=2) (4=1) (5=0)
 		gen y_fc_pc = q105
-		gen y_fc_cost = q137 
+		gen y_fc_cost = q136 
 			/*REVERSE ORDER*/
 			recode y_fc_cost (0=5) (1=4) (2=3) (3=2) (4=1) (5=0)		
 			
@@ -795,8 +821,8 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 	***** 4. [Coordination]
 
 		gen y_coor_other = q113
-			/*RECODE NA*/
-			/*Not applicable, I did not receive care from other professionals*/
+			/*RECODE DON'T KNOW*/
+			/*Do not know*/
 			recode y_coor_other 6=.		
 		gen y_coor_allinfo = q114
 			/*RECODE NA*/
@@ -813,8 +839,8 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		gen y_pcc_confidence = q118
 		gen y_pcc_confi = q119
 		gen y_pcc_privacy = q120
-		gen y_pcc_care = q121
-		gen y_pcc_respect = q122
+		gen y_pcc_respect = q121
+		gen y_pcc_care = q122
 		gen y_pcc_enoughtime = q123
 		gen y_pcc_considerall = q124
 		gen y_pcc_involve = q125
@@ -822,10 +848,7 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		gen y_pcc_cpfollow = q127
 		gen y_pcc_cpgoal = q128
 		gen y_pcc_others = q129
-		gen y_pcc_env = q130
-			/*RECODE NA*/
-			/*I have not visited my primary care clinic(s) in the previous 12 months 6*/
-			recode y_pcc_env 6=. 					
+		gen y_pcc_env = q130	
 		gen y_pcc_lang = q131
 		gen y_pcc_understand = q132
 		
@@ -846,7 +869,7 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 
 	***** 8. [Overall experience]
 	
-		gen y_overall = q136
+		gen y_overall = q137
 	
 		sum y_overall
 		
