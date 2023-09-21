@@ -7,8 +7,7 @@ numlabel, add
 
 * Date of the PREM questionniare version: Questionnaire_8SEPT2023_WORKING
 *	https://worldhealthorg-my.sharepoint.com/:w:/r/personal/banicag_who_int/_layouts/15/Doc.aspx?sourcedoc=%7BA1DE21BB-2BD1-4F22-B36B-4B4EBC0AE145%7D&file=Questionnaire_8SEPT2023_WORKING.docx&wdLOR=c2F996D4A-4A15-9D4B-A8F6-4242767CAB35&action=default&mobileredirect=true
-* https://worldhealthorg-my.sharepoint.com/:w:/r/personal/banicag_who_int/_layouts/15/Doc.aspx?sourcedoc=%7BA1DE21BB-2BD1-4F22-B36B-4B4EBC0AE145%7D&file=Questionnaire_8SEPT2023_WORKING.docx&action=default&mobileredirect=true
-* Date of last code update: 9/18/2023
+* Date of last code update: 9/21/2023
 *	https://github.com/yoonjoung/WHO_PREM
 *	https://github.com/yoonjoung/WHO_PREM/blob/main/PREM_Pilot_DataManagement_WORKING.do
 
@@ -413,17 +412,29 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Cli
 	
 	#delimit;	
 	global varlist_5 "
-		          q103 q104 q105 q106 q107 q108 q109 q110 
-		q111                q115 q116 q117 q118 q119 q120
+		          q103 q104           q107 q108 q109 q110 
+		q111                q115 q116 q117 q118 q119 
 		q121 q122 q123 q124 q125 q126 q127 q128 q129 
 		q131 q132 q133 	         q136
 		" ;
 		#delimit cr
 		
-	global varlist_5na "q112 q114 "		
+	global varlist_5na "q105 q106 q112 q114 q120"		
+		/*
+		RESPONSE OPTINO FOR "N/A"
+		Q105: I do not have a usual primary care professional…….6 
+		Q106: I do not have a usual doctor/nurse…..6 
+		Q112: I did not need any home visit	6 
+		Q114: I was not referred to other professionals………………...6 
+		Q120: I was not examined.……..6 
+		*/
 	global varlist_5dk "q113 "		
 	global varlist_rate5 "q137"	
 	global varlist_rate5na "q130"	
+		/*
+		RESPONSE OPTINO FOR "N/A"
+		Q130: I have not visited a primary care clinic in the previous 12 months……….... 6 
+		*/
 	global varlist_yessometimesnonanotsure "q134"
 	global varlist_yesnonotsure "q135"
 	global varlist_yesnodk "q100a q100b q102 q113"
