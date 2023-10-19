@@ -12,18 +12,20 @@ numlabel, add
 
 *This code 
 *1) imports and cleans MOCK interview dataset from Lime Survey, and 
-*2) creates indicator estimate data - TBD
+*2) reshape and export data in excel for easier review 
+*3) creates summary note with figures in word
 
 *  DATA IN:	
-*		1. CSV file downloaded from Limesurvey 	
+*		1. Cognitive test data directly downloaded from Limesurvey 	
 
 *  DATA OUT: 
-*		1. raw data (as is, downloaded from Limesurvey) 
-*		2. cleaned data with additional analytical variables
-*		3. summary estimates of indicators 
+*		1. raw data downloaded from Limesurvey, saved in CSV as is 
+*		2. reshaped (long) data for question-by-question review
+*		3. cleaned data with additional analytical/assessment variables
+*		4. summary estimates of overview measures 
 
 *  NOTE OUT 
-*		1. WORD DOC with summary estimates of indicators? - TBD
+*		1. WORD DOC with summary figures
 
 /* TABLE OF CONTENTS*/
 
@@ -46,6 +48,9 @@ numlabel, add
 
 * E. Create analytical variables 
 *****E.1. Construct analysis variables 
+*****E.2. Export clean person-level data to excel 
+*****E.3. Reshpae to LONG person-question level data 
+*****E.4. Export LONG person-question level data to excel 
 
 * F. Create and export indicator estimate data 
 *****F.1. Calculate estimates 
@@ -95,7 +100,9 @@ import delimited using "https://extranet.who.int/dataformv3/index.php/plugins/di
 
 *****B.2. Export/save the data daily in CSV form with date 	
 
-export delimited using "$downloadcsvdir/LimeSurvey_PREM_CT_EXAMPLE_$date.csv", replace
+* export delimited using "$downloadcsvdir/LimeSurvey_PREM_CT_EXAMPLE_$date.csv", replace
+* We need the next line until there are more data entry in the mock link....
+import delimited "$downloadcsvdir/LimeSurvey_PREM_CT_EXAMPLE_16Oct2023.csv", case(preserve) clear 
 
 *****B.3. Check and drop odd rows
 
@@ -297,7 +304,7 @@ drop if submitdate==""
 	lab define yesnocannot
 		1 "1.Yes"
 		2 "2.No"
-		3 "2.Cannot be established"
+		3 "3.Cannot be established"
 		;
 	foreach var of varlist q*comqt q*retqt q*judqt q*respqt {;		
 	lab values `var' yesnocannot; 
@@ -308,14 +315,13 @@ drop if submitdate==""
 	*****************************
 	
 	* Not the focus of CT analysis. Not included here. 
-
 	
 **************************************************************
 * D. Expand and scramble the mock data <= DELETE THIS SECTION WHEN WORKING WITH REAL DATA
 **************************************************************
 
 	*
-	expand 30 
+	expand 15 
 	
 	foreach varnum in $mainvarnumlist {		
 	set seed 410	
@@ -354,7 +360,7 @@ drop if submitdate==""
 		recode q402 (1=2) if random<=0.45
 		recode q402 (2=1) if random>0.45
 		drop random
-	*/		
+*/		
 	
 **************************************************************
 * E. Create analytical variables 
@@ -368,8 +374,8 @@ drop if submitdate==""
 	*****************************
 	* Cover  
 	*****************************
-
-		egen clientid = concat(a003 a004 a005)
+		
+		egen clientid = concat(a005 a003 a004)
 	
 		gen country = "`country'"
 		
@@ -385,29 +391,29 @@ drop if submitdate==""
 	
 	***** basic variables for disaggregated analysis 
 		
-		gen zcare = .
-			replace zcare = 1 if q100a==1 & q100b==1 
-			replace zcare = 2 if q100a==1 & q100b!=1
-			replace zcare = 3 if q100a!=1 & q100b==1
-			tabstat q100a q100b, by(zcare) stats(min max)
-			lab define zcare 1 "both patient & caregiver" 2 "only patient" 3 "only caregiver"
-			lab values zcare zcare
+		gen care = .
+			replace care = 1 if q100a==1 & q100b==1 
+			replace care = 2 if q100a==1 & q100b!=1
+			replace care = 3 if q100a!=1 & q100b==1
+			tabstat q100a q100b, by(care) stats(min max)
+			lab define care 1 "both patient & caregiver" 2 "only patient" 3 "only caregiver"
+			lab values care care
 			
-		egen zage = cut(q301), at(18 40 99)
-			codebook zage
-			tabstat q301, by(zage) stats(min max)
-			recode zage (18=1) (40=2)
-			lab define zage 1 "18-39" 2 "40+" 
-			lab values zage zage
+		egen age = cut(q301), at(18 40 99)
+			codebook age
+			tabstat q301, by(age) stats(min max)
+			recode age (18=1) (40=2)
+			lab define age 1 "18-39" 2 "40+" 
+			lab values age age
 		
-		gen zgender = q302
-			recode zgender 4=3
-			lab define zgender 1 "Male" 2 "Female" 3 "Other/NoResponse"
-			lab values zgender zgender
+		gen gender = q302
+			recode gender 4=3
+			lab define gender 1 "Male" 2 "Female" 3 "Other/NoResponse"
+			lab values gender gender
 			
-		gen byte zedu = q303>=3 & q303!=.
-			lab define zedu 0 "primary or less" 1 "secondary or higher"
-			lab values zedu zedu
+		gen byte edu = q303>=3 & q303!=.
+			lab define edu 0 "primary or less" 1 "secondary or higher"
+			lab values edu edu
 			
 	*****************************	
 	* Cognitive testing variables
@@ -421,30 +427,30 @@ drop if submitdate==""
 			gen xpost`var' = `var'==1 | `var'==3  
 		}	
 
-	sum xobs*
-	sum xpost*
+		sum xobs*
+		sum xpost*
 
-		foreach varnum in $mainvarnumlist{	
-			egen temp = rowtotal(xobsq`varnum'_*)
-			tab temp, m
-			gen xobsq`varnum'__any = temp>=1
-			drop temp
-			}		
+			foreach varnum in $mainvarnumlist{	
+				egen temp = rowtotal(xobsq`varnum'_*)
+				tab temp, m
+				gen xobsq`varnum'__any = temp>=1
+				drop temp
+				}		
 
-		foreach varnum in $mainvarnumlist{	
-			egen temp = rowtotal(xpostq`varnum'_*)
-			tab temp, m
-			gen xpostq`varnum'__any = temp>=1
-			drop temp
-			}					
-			
-	sum xobs*any
-	sum xpost*any
-	
-	egen yobs__any = rowtotal(xobs*__any)
-	egen ypost__any = rowtotal(xpost*__any)
+			foreach varnum in $mainvarnumlist{	
+				egen temp = rowtotal(xpostq`varnum'_*)
+				tab temp, m
+				gen xpostq`varnum'__any = temp>=1
+				drop temp
+				}					
+				
+		sum xobs*any
+		sum xpost*any
+		
+		egen yobs__any = rowtotal(xobs*__any)
+		egen ypost__any = rowtotal(xpost*__any)
 
-	sum y*
+		sum y*
 	
 	*****************************
 	* Interview results
@@ -454,13 +460,131 @@ drop if submitdate==""
 		
 		tab mode language, m
 
-*****E.2. Export clean facility-level data to chart book 
+*****E.2. Export clean person-level data to excel 
 	
+	***** order columns
+	order clientid country language care age gender edu	/*bring these to the front*/
+	order Ãid - q002sq001comment, last /*move these to the end*/
+	
+	***** sort rows
 	sort clientid
+	
 	save "$datadir/PREM_CT_`country'.dta", replace 		
+	
+		gen updatedate = "$date"
 
-	export delimited "$datadir/PREM_CT_`country'", replace 
+		local time=c(current_time)
+		gen updatetime=""
+		replace updatetime="`time'"
+
+	export excel using "$datadir/PREM_CT_`country'.xlsx", ///
+		sheet("Wide_Person") sheetreplace firstrow(variables) 
 		
+*****E.3. Reshpae to LONG person-question level data 
+
+	save temp.dta, replace
+	
+	use temp.dta, clear
+	***** drop 
+		drop x*  /*assessment variables created for summary report*/
+		drop Ãid - q002sq001comment q3* q4* country mode submitdate update* /*interview level data*/
+	
+	***** rename variables for reshape 
+		foreach varnum in $mainvarnumlist{	
+			rename q`varnum' answer`varnum'
+			
+			rename q`varnum'_rep obs_rep`varnum'
+			rename q`varnum'_cla obs_cla`varnum'
+			rename q`varnum'_opt obs_opt`varnum'
+			rename q`varnum'_ans obs_ans`varnum'
+			
+			rename (q`varnum'qual*) (qual*_`varnum')
+			
+			rename q`varnum'consolidation	con`varnum'
+
+			rename q`varnum'_comqt	post_com`varnum'         
+			rename q`varnum'comtxt  post_comtxt`varnum'
+			rename q`varnum'_retqt  post_ret`varnum'               
+			rename q`varnum'rettxt	post_rettxt`varnum' 	     
+			rename q`varnum'_judqt  post_jud`varnum'                 
+			rename q`varnum'judtxt	post_judtxt`varnum'      
+			rename q`varnum'_respqt	post_resp`varnum'                                               
+			rename q`varnum'resptxt	post_resptxt`varnum'     
+
+			rename q`varnum'sumtxt		post_sumtxt`varnum'      
+			rename q`varnum'disagqt		post_disag`varnum'     
+			rename q`varnum'disagtxt	post_disagtxt`varnum'    
+		}
+	
+			rename inst1a answerinst1a
+			rename inst1b answerinst1b
+			rename inst2  answerinst2
+			rename inst3  answerinst3  
+			rename inst4  answerinst4  
+			rename inst5  answerinst5
+	
+	***** check and convert variable type 
+	* Lime survey thinks a text variables is numeric, if it's missing in ALL rows
+		
+		foreach var of varlist qual* post*txt*{
+		tostring `var', replace
+		}
+		
+		foreach var of varlist answer*{
+		tostring `var', replace
+		}		
+	
+	***** check clientid is unique 
+		
+		codebook clientid
+			
+			*
+			gen n = _n 
+			tostring n, replace		
+			egen temp = concat(n clientid) 
+			replace clientid = temp
+			capture drop n temp
+			*/
+			
+		codebook clientid
+	
+	***** reshape 
+	
+		reshape long ///
+			answer obs_rep obs_cla obs_opt obs_ans ///
+			qual_ qual1_ qual2_ con ///
+			post_com post_comtxt post_ret post_rettxt post_jud post_judtxt post_resp post_resptxt ///
+			post_sumtxt post_disag post_disagtxt , i(clientid) j(question) string
+			
+		tab question, m
+		
+		rename (qual*_) (qual*) /*clean var name*/
+	
+	***** label variables
+		
+		foreach var of varlist obs_* post_disag {		
+			lab values `var' yesno 
+			}
+	
+		lab define postyesnocannot ///
+			1 "1.Yes, there is an issue" ///
+			2 "2.No issue" ///
+			3 "3.Cannot be established"
+		foreach var of varlist post_com post_ret post_jud post_resp {		
+			lab values `var' postyesnocannot 
+			}	
+		
+	***** order columns
+		order clientid language care age gender edu	/*bring these to the front*/
+		
+	***** sort rows
+		sort clientid
+	
+*****E.4. Export LONG person-question level data to excel 
+		
+	export excel using "$datadir/PREM_CT_`country'.xlsx", ///
+		sheet("Long_Person_Question") sheetreplace firstrow(variables) 
+	
 **************************************************************
 * F. Create indicator estimate data 
 **************************************************************
@@ -508,8 +632,6 @@ use "$datadir/PREM_CT_`country'.dta", clear
 		sort country language obs 
 		
 save "$datadir/summary_PREM_CT_`country'.dta", replace 
-		
-export delimited using "$datadir/summary_PREM_CT_`country'.csv", replace 
 
 *END OF DATA CLEANING AND MANAGEMENT 
 
