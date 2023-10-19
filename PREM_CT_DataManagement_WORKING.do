@@ -100,7 +100,7 @@ import delimited using "https://extranet.who.int/dataformv3/index.php/plugins/di
 
 *****B.2. Export/save the data daily in CSV form with date 	
 
-* export delimited using "$downloadcsvdir/LimeSurvey_PREM_CT_EXAMPLE_$date.csv", replace
+export delimited using "$downloadcsvdir/LimeSurvey_PREM_CT_EXAMPLE_$date.csv", replace
 * We need the next line until there are more data entry in the mock link....
 import delimited "$downloadcsvdir/LimeSurvey_PREM_CT_EXAMPLE_16Oct2023.csv", case(preserve) clear 
 
@@ -486,7 +486,7 @@ drop if submitdate==""
 	
 	use temp.dta, clear
 	***** drop 
-		drop x*  /*assessment variables created for summary report*/
+		drop x* y* /*assessment variables created for summary report*/
 		drop Ãid - q002sq001comment q3* q4* country mode submitdate update* /*interview level data*/
 	
 	***** rename variables for reshape 
