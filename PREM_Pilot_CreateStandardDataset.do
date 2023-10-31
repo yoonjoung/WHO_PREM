@@ -100,7 +100,7 @@ A007	SERIAL NUMBER OF THE CLIENT 
 			foreach var of varlist b {		
 			set seed 2	
 				generate random = runiform()
-				replace `var' = 1 if random<=33
+				replace `var' = 1 if random<=0.33
 				replace `var' = 2 if random>0.33 & random<=0.66
 				replace `var' = 3 if random>0.66
 				drop random 
@@ -110,7 +110,7 @@ A007	SERIAL NUMBER OF THE CLIENT 
 			foreach var of varlist c {		
 			set seed 3
 				generate random = runiform()
-				replace `var' = 1 if random<=33
+				replace `var' = 1 if random<=0.33
 				replace `var' = 2 if random>0.33 & random<=0.66
 				replace `var' = 3 if random>0.66
 				drop random 
@@ -131,7 +131,7 @@ A007	SERIAL NUMBER OF THE CLIENT 
 	foreach var of varlist A006{		
 	set seed 38	
 		generate random = runiform()
-		replace `var' = 1 if random<=33
+		replace `var' = 1 if random<=0.33
 		replace `var' = 2 if random>0.33 & random<=0.66
 		replace `var' = 3 if random>0.66
 		drop random 

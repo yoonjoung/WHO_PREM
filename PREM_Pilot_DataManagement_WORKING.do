@@ -72,24 +72,25 @@ numlabel, add
 **************************************************************
 
 *** Directory for this do file 
-cd "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/4_DataAnalysis/"
+global mydir "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/4_DataAnalysis/"
+cd $mydir
 
 *** Directory for downloaded CSV data (can be same or different from the main directory)
-global downloadcsvdir "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/4_DataAnalysis/ExportedCSV_FromLimeSurvey/"
+global downloadcsvdir "$mydir/ExportedCSV_FromLimeSurvey/"
 
 *** Define a directory for the chartbook (can be same or different from the main directory)
-global chartbookdir "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/4_DataAnalysis/"
+global chartbookdir "$mydir"
 
 *** Define a directory for processed data files (can be same or different from the main directory)
-global datadir "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/4_DataAnalysis/DataProduced/"
+global datadir "$mydir/PilotDataProduced/"
 
 *** Define a directory for stata log files (can be same or different from the main directory)
-global statalog "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/4_DataAnalysis/StataLog/"
+global datanotedir "$mydir/PilotDataNote/"
 
 *** Define local macro for the survey 
 
 local country	 		 EXAMPLE /*country name*/	
-local round 			 1 /*round*/		
+local round 			 P /*round*/		
 local year 			 	 2023 /*year of the mid point in data collection*/	
 local month 			 6 /*month of the mid point in data collection*/	
 
@@ -99,21 +100,20 @@ local surveyid 			 872833 /*LimeSurvey survey ID*/
 
 local countrylanguage1	 Spanish /*Country language 1*/
 
-local geoname1	 		 Anne Arundel /*Study district names*/
+/*Study district names: must match with district code in ORANGE tab*/
+local geoname1	 		 Anne Arundel 
 local geoname2	 		 Baltimore 
 local geoname3	 		 Harford
 local geoname4	 		 Somerset
 
+/*Facility type: must match with facility_type numeric code in ORANGE tab*/
 local type1 			 District Hospital /*Facility type*/
 local type2 			 Health Center 
 local type3 			 Health Post
 
+/*Facility managing authority: must match with managing_authority numeric code in ORANGE tab*/
 local sector1 			 Public /*Managing authority*/
 local sector2 			 Non Public 		
-
-local service1 			 Service A /*Service Area*/		
-local service2 			 Service B
-local service3 			 Service C 
 		
 *** local macro for analysis (no change needed)  
 local today		= c(current_date)
@@ -421,7 +421,7 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Cli
 		
 	global varlist_5na "q105 q106 q112 q114 q120"		
 		/*
-		RESPONSE OPTINO FOR "N/A"
+		RESPONSE OPTION FOR "N/A"
 		Q105: I do not have a usual primary care professional…….6 
 		Q106: I do not have a usual doctor/nurse…..6 
 		Q112: I did not need any home visit	6 
@@ -432,7 +432,7 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Cli
 	global varlist_rate5 "q137"	
 	global varlist_rate5na "q130"	
 		/*
-		RESPONSE OPTINO FOR "N/A"
+		RESPONSE OPTION FOR "N/A"
 		Q130: I have not visited a primary care clinic in the previous 12 months……….... 6 
 		*/
 	global varlist_yessometimesnonanotsure "q134"
@@ -738,7 +738,7 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		codebook id clientid
 		
 		gen country = "`country'"
-		gen round 	=`round'
+		gen round 	= "`round'"
 		gen month	=`month'
 		gen year	=`year'
 		
@@ -1215,7 +1215,7 @@ export delimited using "$datadir/summary_PREM_`country'_R`round'_Stata.csv", rep
 **************************************************************
 
 capture log close
-log using "$statalog/DataCheck_PREM_`country'_R`round'_$date.log", replace
+log using "$datanotedir/DataCheck_PREM_`country'_R`round'_$date.log", replace
 
 *** Minimum red-flag indicators will be listed. So, the shorter log, the better.  
 
@@ -1361,4 +1361,4 @@ log on
 	
 log close
 	
-END OF DATA CLEANING AND MANAGEMENT 
+*END OF DATA CLEANING AND MANAGEMENT 

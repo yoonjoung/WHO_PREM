@@ -42,13 +42,14 @@ numlabel, add
 **************************************************************
 
 *** Directory for this do file 
-cd "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/4_DataAnalysis/"
+global mydir "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/4_DataAnalysis/"
+cd $mydir
 
 *** Define a directory for the chartbook (can be same or different from the main directory)
-global chartbookdir "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/4_DataAnalysis/"
+global chartbookdir "$mydir"
 
 *** Define a directory for PROCESSED data files 
-global datadir "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/4_DataAnalysis/DataProduced/"
+global datadir "$mydir/PilotDataProduced/"
 
 *** Define local macro for the survey 
 local country	 		 EXAMPLE /*country name*/	
@@ -62,21 +63,20 @@ local surveyid 			 259237 /*LimeSurvey survey ID*/
 
 local countrylanguage1	 Spanish /*Country language 1*/
 
-local geoname1	 		 Anne Arundel /*Study district names*/
+/*Study district names: must match with district code in ORANGE tab*/
+local geoname1	 		 Anne Arundel 
 local geoname2	 		 Baltimore 
 local geoname3	 		 Harford
 local geoname4	 		 Somerset
 
+/*Facility type: must match with facility_type numeric code in ORANGE tab*/
 local type1 			 District Hospital /*Facility type*/
 local type2 			 Health Center 
 local type3 			 Health Post
 
+/*Facility managing authority: must match with managing_authority numeric code in ORANGE tab*/
 local sector1 			 Public /*Managing authority*/
-local sector2 			 Non Public 		
-
-local service1 			 Service A /*ServiceArea*/		
-local service2 			 Service B
-local service3 			 Service C 
+local sector2 			 Non Public 				
 		
 *** local macro for analysis (no change needed)  
 local today=c(current_date)
@@ -312,32 +312,3 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Pil
 erase temp.dta		
 
 END OF DATA CLEANING AND MANAGEMENT - Yay!!! 
-
-
-**************************************************************
-* D. Data viz and output
-**************************************************************	
-
-use "$datadir/PREM_Pilot_Process_`country'_R`round'.dta", clear
-
-	#delimit;
-	graph bar num_comp if group=="Date", 
-		over(axis) 
-		by(studyarm, 
-			row(1)
-			title("Number of completed interviews over time")
-			note("Update as of: $date") )
-		ytitle("Number of completed interviews per day") 
-	;	
-	#delimit cr
-	
-	#delimit;
-	graph bar rate_resp* if studyarm~="" ,
-		by(studyarm, 
-			row(1)
-			title("Response rate among those who consented")
-			note("Update as of: $date") )
-		ytitle("Response rate (%)") 
-	;	
-	#delimit cr	
-	
