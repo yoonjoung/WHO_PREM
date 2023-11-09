@@ -80,6 +80,8 @@ local month 			 6 /*month of the mid point in data collection*/
 
 local surveyid 			 751181 /*LimeSurvey survey ID for cognitive interview*/
 
+local startdate 	 	 20231015 /*First date of the real data collection - in YYYYMMDD */ 
+
 *** Define local macro for response options specific to the country 
 
 local countrylanguage	 Country_Language /*Country language*/
@@ -361,10 +363,18 @@ drop if submitdate==""
 		recode q402 (2=1) if random>0.45
 		drop random
 */		
-	
+
 **************************************************************
 * E. Create analytical variables 
 **************************************************************
+
+*****E.0 Drop data that were entered for practice and test <= ACTIVATE THIS LINE WHEN WORKING WITH REAL DATA
+/*	
+	replace submitdate = dofc(submitdate) 
+	format submitdate %td
+	
+	drop if submitdate < date("`startdate'","YMD") 
+*/
 
 *****E.1. Construct analysis variables 
 
@@ -640,7 +650,7 @@ save "$datadir/summary_PREM_CT_`country'.dta", replace
 ************************************************************************
 
 use "$datadir/summary_PREM_CT_`country'.dta", clear
-		
+
 capture putdocx clear 
 putdocx begin
 	
@@ -701,6 +711,8 @@ putdocx image "temp.png", height(3.8) width(3.5)
 	
 }
 
+	*****
+
 putdocx pagebreak	
 putdocx paragraph
 putdocx text ("2. Type of issues by question and interview language: observed and agreed post-consolidation"), bold linebreak	
@@ -708,7 +720,23 @@ putdocx text ("2. Type of issues by question and interview language: observed an
 		gen dummy=.
 		drop if language=="All"
 
-	foreach varnum in $mainvarnumlist{		
+save temp.dta, replace		
+
+	foreach varnum in $mainvarnumlist{	
+
+* Main question	
+use PREM_CT_questions.dta, clear	
+	keep if regexm(qnum, "`varnum'") ==1
+	drop if regexm(qnum, "qual") ==1
+	keep question 
+	
+		putdocx paragraph			
+		putdocx text ("Q`varnum': main question"), bold linebreak			
+		putdocx table table = data(*), /*autofitwidth*/
+
+* CT results		
+use temp.dta, clear
+	
 	#delimit;
 	graph bar xobsq`varnum'* dummy xpostq`varnum'*,  
 		by(language, 
@@ -754,10 +782,20 @@ graph save Graph "temp.gph", replace
 graph export "temp.png", replace	
 
 putdocx paragraph
-putdocx image "temp.png", height(3) width(6)		
+putdocx image "temp.png", height(3) width(6)	
+
+* Main question	
+use PREM_CT_questions.dta, clear	
+	keep if regexm(qnum, "`varnum'") ==1	
+	keep if regexm(qnum, "qual") ==1
+	*keep question 
+	
+		putdocx paragraph			
+		putdocx text ("Prob questions"), linebreak			
+		putdocx table table = data(*), /*autofitwidth*/
+		putdocx pagebreak			
 }
 	
-putdocx pagebreak	
 putdocx paragraph
 putdocx text ("3. Problem respondents"), bold linebreak	
 putdocx text (""), linebreak	
