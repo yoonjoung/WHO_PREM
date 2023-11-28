@@ -34,7 +34,9 @@ numlabel, add
 * B. Import and drop duplicate cases
 *****B.1. Import raw data from LimeSurvey 
 *****B.2. Export/save the data daily in CSV form with date 
+*****B.3. Check and drop odd rows
 *****B.4. Drop duplicate cases 
+*****B.5. Drop data that were entered for practice and test <= ACTIVATE THIS SECTION WHEN WORKING WITH REAL DATA
 
 * C. Cleaning - variables
 *****C.1. Change var names to lowercase
@@ -66,10 +68,10 @@ global mydir "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/5_DataAnalysisCognit
 cd $mydir
 
 *** Directory for downloaded CSV data (can be same or different from the main directory)
-global downloadcsvdir "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/5_DataAnalysisCognitiveTest/ExportedCSV_FromLimeSurvey/"
+global downloadcsvdir "$mydir/ExportedCSV_FromLimeSurvey/"
 
 *** Define a directory for processed data files (can be same or different from the main directory)
-global datadir "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/5_DataAnalysisCognitiveTest/"
+global datadir "$mydir"
 
 *** Define local macro for the survey 
 
@@ -78,7 +80,7 @@ local round 			 1 /*round*/
 local year 			 	 2023 /*year of the mid point in data collection*/	
 local month 			 6 /*month of the mid point in data collection*/	
 
-local surveyid 			 751181 /*LimeSurvey survey ID for cognitive interview*/
+local surveyid 			 228174 /*LimeSurvey survey ID for cognitive interview*/
 
 local startdate 	 	 20231015 /*First date of the real data collection - in YYYYMMDD */ 
 
@@ -99,10 +101,10 @@ global date		= subinstr("`c_today'", " ", "",.)
 import delimited using "https://extranet.who.int/dataformv3/index.php/plugins/direct?plugin=CountryOverview&docType=1&sid=`surveyid'&language=en&function=createExport", case(preserve) clear
 	
 		d, short
-
+okok
 *****B.2. Export/save the data daily in CSV form with date 	
 
-export delimited using "$downloadcsvdir/LimeSurvey_PREM_CT_EXAMPLE_$date.csv", replace
+export delimited using "$downloadcsvdir/LimeSurvey_PREM_CT_`country'_$date.csv", replace
 * We need the next line until there are more data entry in the mock link....
 import delimited "$downloadcsvdir/LimeSurvey_PREM_CT_EXAMPLE_16Oct2023.csv", case(preserve) clear 
 
@@ -193,6 +195,20 @@ drop if submitdate==""
 		*	Now there should be no duplicate, yay!!   
 
 		drop duplicate submitdatelatest
+
+*****B.5. Drop data that were entered for practice and test <= ACTIVATE THIS LINE WHEN WORKING WITH REAL DATA
+/*	
+	replace submitdate = dofc(submitdate) 
+	format submitdate %td
+	
+		tab submitdate
+	
+	drop if submitdate < date("`startdate'","YMD") /*Drop any data entry before CT start date*/
+		
+		tab A003 submitdate, m
+	drop if submitdate==. 
+		tab submitdate, m	
+*/		
 
 **************************************************************
 * C. Data cleaning - variables 
@@ -362,19 +378,20 @@ drop if submitdate==""
 		recode q402 (1=2) if random<=0.45
 		recode q402 (2=1) if random>0.45
 		drop random
+		
+	* For unique client id
+		gen n = _n 
+		tostring n, replace		
+				
+		tostring a005, replace
+		replace a005 = n
+		capture drop n temp
+			
 */		
 
 **************************************************************
 * E. Create analytical variables 
 **************************************************************
-
-*****E.0 Drop data that were entered for practice and test <= ACTIVATE THIS LINE WHEN WORKING WITH REAL DATA
-/*	
-	replace submitdate = dofc(submitdate) 
-	format submitdate %td
-	
-	drop if submitdate < date("`startdate'","YMD") 
-*/
 
 *****E.1. Construct analysis variables 
 
@@ -430,7 +447,7 @@ drop if submitdate==""
 	*****************************
 	
 		foreach var of varlist *rep *cla *opt *ans {		
-			gen xobs`var' = `var'==2
+			gen xobs`var' = `var'==1
 		}
 		
 		foreach var of varlist q*comqt q*retqt q*judqt q*respqt {		
@@ -469,6 +486,22 @@ drop if submitdate==""
 		gen xcomplete=q403==1
 		
 		tab mode language, m
+		
+*****E.1.A. COUNTRY SPECIFIC DATA EDIT 
+	/*STARTS*/
+
+		d, short
+		
+		*1. Make sure there is no missing language				
+				tab language, m
+				
+			list a003 a004 a005 q002sq001comment if language==""
+
+		*2. Check Q3 & Q4 for these cases 
+
+			list q3* q4* xcomplete 
+			
+	/*GHANA SPECIFIC DATA EDIT ENDS*/			
 
 *****E.2. Export clean person-level data to excel 
 	
@@ -546,18 +579,14 @@ drop if submitdate==""
 	
 	***** check clientid is unique 
 		
-		codebook clientid
-			
-			*
-			gen n = _n 
-			tostring n, replace		
-			egen temp = concat(n clientid) 
-			replace clientid = temp
-			capture drop n temp
-			*/
-			
-		codebook clientid
-	
+		codebook clientid					
+
+	***** check and drop "con" /*CAN BE COUNTRY-SPECIFIC EDIT*/
+		
+		d con* /*except one all is numeric*/ 
+		sum con* /*all empty in any case*/
+		drop con*
+		
 	***** reshape 
 	
 		reshape long ///
@@ -588,7 +617,7 @@ drop if submitdate==""
 		order clientid language care age gender edu	/*bring these to the front*/
 		
 	***** sort rows
-		sort clientid
+		sort language clientid
 	
 *****E.4. Export LONG person-question level data to excel 
 		
