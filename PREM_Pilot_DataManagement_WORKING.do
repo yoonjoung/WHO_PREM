@@ -623,7 +623,7 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Cli
 			
 	rename a005 facilityid 
 	rename a006 service
-	rename a007 listingnumber 	
+	rename a007 samplenumber 	
 	
 	sort facilityid 	
 	save temp.dta, replace
@@ -729,11 +729,11 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		
 		gen str3 st_facilityid = string(facilityid,"%03.0f")
 		gen str1 st_service = string(service,"%01.0f")
-		gen str3 st_listingnumber = string(listingnumber,"%03.0f")
+		gen str3 st_samplenumber = string(samplenumber,"%03.0f")
 		
 		codebook st_*
 		
-		gen clientid = st_facilityid + "_" + st_service + "_" + st_listingnumber 
+		gen clientid = st_facilityid + "_" + st_service + "_" + st_samplenumber 
 		
 		codebook id clientid
 		

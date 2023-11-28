@@ -51,16 +51,18 @@ numlabel, add
 * D.A Expand and scramble the mock data <<<<<<<<<<== DELETE THIS SECTION WHEN WORKING WITH REAL DATA
 
 * E. Export datafile with all listing process information
+***** E.1 Drop data that were entered for practice and test <<<<<<<<<<== ACTIVATE THIS SECTION
+***** E.2 Export	
 
-* F. Assessment of the listing progress
-***** F.1 gen listing progress check variables
-***** F.2 collapse by district 
+* F. Sampling 
+***** F.1 Keep only those who are "listed" with phone numbers
+***** F.2 Sample by facility
+***** F.3 Append all sample by facility
+***** F.4 Export datafile with sampled clients
 
-* G. Sampling 
-***** G.1 Keep only those who are "listed" with phone numbers
-***** G.2 Sample by facility
-***** G.3 Append all sample by facility
-***** G.4 Export datafile with sampled clients
+* G. Report: Assessment of the listing progress
+***** G.1 gen listing progress check variables
+***** G.2 collapse by district 
 
 **************************************************************
 * A. SETTING 
@@ -90,12 +92,14 @@ local month 			 6 /*month of the mid point in data collection*/
 
 local surveyid 			 885938 /*LimeSurvey survey ID*/
 
+local startdate 	 20231120 /*First date of the actual listing - in YYYYMMDD */ 
+
 *** Define local macro for response options specific to the country 
 
 local countrylanguage1	 Spanish /*Country language 1*/
 
 /*Study district names: must match with district code in ORANGE tab*/
-local geoname1	 		 Mfantseman 
+local geoname1	 		 Mfantseman
 local geoname2	 		 Suhum
 local geoname3	 		 West Gonja
 local geoname4	 		 South Dayi
@@ -104,7 +108,7 @@ local geoname4	 		 South Dayi
 local type1 			 District Hospital 
 local type2 			 Health Center 
 local type3 			 CHPS
-		
+
 *** local macro for analysis (no change needed)  
 local today=c(current_date)
 local c_today= "`today'"
@@ -122,8 +126,6 @@ import delimited using "https://extranet.who.int/dataformv3/index.php/plugins/di
 ***** B.2. Export/save the data daily in CSV form with date 	
 
 export delimited using "$downloadcsvdir/LimeSurvey_PREM_Listing_`country'_$date.csv", replace
-*We need the next line until there are more data entry in the mock link....
-*import delimited "$downloadcsvdir/LimeSurvey_PREM_CT_EXAMPLE_16Oct2023.csv", case(preserve) clear 
 
 ***** B.3. Check and drop odd rows
 
@@ -239,15 +241,16 @@ drop if submitdate==""
 	rename q103 phone
 	rename q105a agree
 	rename q105 name
-	rename q106 number
-	rename q107 number2
+	rename q106 phonenumber
+	rename q107 phonenumber2
+		
+	tostring phonenumber, replace
+	tostring phonenumber2, replace
 	
-	rename submitdate listingdate
-	
-	tostring number, replace
-	tostring number2, replace
-	
-	gen byte listinginfocomplete = name!="" & number!="" /*those who provided name and number*/
+	gen listingdate = dofc(submitdate) 
+	format listingdate %td
+		
+	gen byte listinginfocomplete = name!="" & phonenumber!="" /*those who provided name and number*/
 		
 ***** C.3. Create one language variable <<<<<<<<<<== MUST BE ADAPTED: MAKE IT CONSISTENT WITH THE LIME SURVEY FORM
 	
@@ -258,7 +261,7 @@ drop if submitdate==""
 ***** C.4. Assign facility id <<<<<<<<<<== MUST BE ADAPTED: MAKE IT CONSISTENT WITH THE LIME SURVEY FORM
 		
 	gen facilityid=.
-		replace facilityid = 1101 if q100bsq001==1
+		replace facilityid = 1101 if q100bsq001==1 
 		replace facilityid = 1202 if q100bsq002==1
 		replace facilityid = 1203 if q100bsq003==1
 		replace facilityid = 1304 if q100bsq004==1
@@ -270,6 +273,22 @@ drop if submitdate==""
 		replace facilityid = 4304 if q100bsq010==1
 		replace facilityid = 4305 if q100bsq011==1
 		replace facilityid = 4306 if q100bsq012==1
+		
+	/*		
+	Saltpond Municipal Hospital
+	Abandze Health Centre
+	Earthly Peace  Clinic
+	Taido CHPS
+	Ekurabadzi CHPS
+	Sanford World Medical
+	
+	Peki District hospital
+	Adzokoe Health Centre
+	Tsanakpe Health Centre
+	Tsatee CHPS
+	Living Oasis Clinic
+	Peki Wudume CHPS
+	*/		
 	
 ***** C.5 sort by facility id
 		
@@ -294,13 +313,15 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		PREMs team in the country will provide this information
 		
 		Contains data
-		  obs:            25                          
-		 vars:             8                          
-		 size:           625                          
+		  obs:            42                          
+		 vars:            15                          
+		 size:         5,628    
+                       
 		--------------------------------------------------------------------------------------------------
 					  storage   display    value
 		variable name   type    format     label      variable label
 		--------------------------------------------------------------------------------------------------
+		
 		facilityid      int     %10.0g                facilityid
 		district        byte    %10.0g                district
 		facility_type   byte    %10.0g                facility_type
@@ -308,6 +329,8 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		target_sample~e int     %10.0g                target_sample_size
 		mode_design     str9    %9s                   mode_design
 		language_design str7    %9s                   language_design
+		target_sample~d int     %10.0g                target_sample_size_revised
+
 		--------------------------------------------------------------------------------------------------
 		Sorted by: 
 
@@ -321,25 +344,24 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 	merge facilityid using temp.dta, 
 	
 		tab _merge
-			
+
 		*****CHECK HERE: 
 		
 		/*
 			
-			.                 tab _merge
+		.                 tab _merge
 
 			 _merge |      Freq.     Percent        Cum.
 		------------+-----------------------------------
-				  1 |         14        1.96        1.96
-				  3 |        700       98.04      100.00
+				  1 |          6       37.50       37.50
+				  3 |         10       62.50      100.00
 		------------+-----------------------------------
-			  Total |        714      100.00
-
+			  Total |         16      100.00
 
 		*/
 		
 		*		all should be 3 (i.e., match) by the end of the listing*/
-		*		until then there will be 1 (facilities with no listing) and 3*/
+		*		until then there may be 1 (facilities with no listing) and 3*/
 		
 		keep if _merge==3 /*for practice purposes*/
 		
@@ -373,8 +395,11 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 * D.A Expand and scramble the mock data <= DELETE THIS SECTION WHEN WORKING WITH REAL DATA
 **************************************************************
 
-	expand 300 
+	expand 200 
 
+	* CHANGE THE LISTING DATE IN ONE CASE FOR AN EXAMPLE 
+	replace listingdate = listingdate + 1 if formid==55
+	
 	* RECODE 
 	foreach var of varlist interest phone language{
 		recode `var' .=0
@@ -394,19 +419,32 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		replace language=0 if phone==0
 		replace agree=0 if language==0
 		
-		foreach var of varlist name number number2{
+		foreach var of varlist name phonenumber phonenumber2{
 		replace `var'="" if agree==0
 		}
+		
+	* DROP CASES FROM CHPS TO MAKE IT MORE REALISTIC 
+		bysort facilityid: gen temp = _n
+		drop if temp>50 & type==3 
+		drop temp
 	
 	replace formid = _n
 	
 	drop listinginfocomplete 
-	gen byte listinginfocomplete = name!="" & number!="" /*those who provided name and number*/
-	
+	gen byte listinginfocomplete = name!="" & phonenumber!="" /*those who provided name and number*/
+*/	
 **************************************************************
 * E. Export 
 **************************************************************
 
+/*
+***** E.1 Drop data that were entered for practice and test <= ACTIVATE THIS SECTION WHEN WORKING WITH REAL DATA
+		tab listingdate, m
+	drop if listingdate < date("`startdate'","YMD") 
+		tab listingdate, m
+*/
+		
+***** E.2 Export	
 	*date and time when the listing files were combined
 	gen updatedate = "$date" 
 
@@ -418,67 +456,7 @@ export excel using "$listingdatadir/PREM_`country'_R`round'_LIST.xlsx", firstrow
 save "$listingdatadir/PREM_`country'_R`round'_LIST.dta", replace
 
 **************************************************************
-* F. Assessment of the listing progress
-**************************************************************
-use "$listingdatadir/PREM_`country'_R`round'_LIST.dta", clear
-
-***** F.1 gen listing progress check variables
-
-	gen num_total = 1
-	
-	gen num_interest = 1 if interest==1 /*interested in the study*/
-	gen num_phone = 1 if phone==1 /*PLUS have access to phone numbers*/
-	gen num_language = 1 if language==1 /*PLUS speak in the language*/
-	
-	gen num_listed = 1 if listinginfocomplete==1 /*gave both name and number*/
-		
-	gen numfacilities = 1
-	
-	save temp.dta, replace 
-	
-***** F.2 collapse by district 
-capture log close
-log using "$listingnotedir/ListingCheck_PREM_`country'_R`round'_$date.log", replace
-
-	*Date and total screened for listing
-	tab updatedate
-	
-	*Number of facilities conducted listing by district
-	use temp.dta, clear
-		
-		collapse (mean) numfacilities, by(district facilityid)
-		tab district, m
-	
-	*By district, number of listing progress in detail
-	use temp.dta, clear
-		
-		collapse (count) num_*, by(district)
-		bysort district: list num_*
-	
-	*By district and facility, number of listing progress in detail
-	use temp.dta, clear
-		
-		collapse (count) num_* (mean) target_sample_size, by(district facilityid type)
-		bysort district type facilityid: list num_* target
-
-log close
-
-erase temp.dta
-
-/*
-capture putdocx clear 
-putdocx begin
-putdocx paragraph
-putdocx text ("Listing progress: `today'"),  linebreak	
-
-putdocx paragraph
-putdocx table stable = (1,10), title("Listing by facility")  
-putdocx table table = data(district type facilityid num_* target_sample_size ) 
-
-putdocx save "$listingnotedir/ListingProgress_$date.docx", replace
-*/
-**************************************************************
-* G. Sampling 
+* F. Sampling 
 **************************************************************
 
 ***** have the temp file ready for step G.3 below....
@@ -486,7 +464,7 @@ clear
 tempfile building
 save `building', emptyok	
 
-***** G.1 Keep only those who are "listed" with phone numbers
+***** F.1 Keep only those who are "listed" with phone numbers
 
 use "$listingdatadir/PREM_`country'_R`round'_LIST.dta", clear
 
@@ -496,7 +474,7 @@ keep if listinginfocomplete==1
 	
 	egen num_listed_facility = count(name), by (facilityid) /*number listed by facility*/
 	
-***** G.2 Sample by each facility
+***** F.2 Sample by each facility
 
     levelsof facilityid, local(levels)
 	
@@ -509,13 +487,13 @@ keep if listinginfocomplete==1
 			sum target_sample_size /*target SS in each facility*/ 
 			return list /*save the target SS as a scalar*/ 
 			sample `r(mean)', count by(facilityid) /*sample the numer of target clients*/
-			list facilityid name number*
+			list facilityid name phonenumber*
 		
 		save "$listingdatadir/sample_`level'.dta", replace
 		restore
 	}
 
-***** G.3 Append all sample by facility
+***** F.3 Append all sample by facility
 	    
     foreach level of local levels {
 		use "$listingdatadir/sample_`level'.dta", replace
@@ -541,21 +519,238 @@ keep if listinginfocomplete==1
 		*	
 	restore
 		
-***** G.4 Export 		
+***** F.4 Export 		
 
 	*** Keep only variables essential to call/interview	
-	keep  name number district facility_name listingdate facilityid formid
+	keep  name phonenumber district_name facility_name listingdate facilityid formid
 	
 	*** Sort and create a serial number
-	sort district listingdate facility_name formid
+	sort district_name listingdate facility_name formid
 	
+	*** Create extra variables that are useful for interview management 
 	gen sample_number = _n
+	gen language = "English"
+		replace language = "`countrylanguage1'" if district_name =="`geoname1'" 
+		
+	lab var sample_number "sample serial number"
+	lab var language "interview language"
 	
 	*** Order 
-	order sample_number name number district facility_name listingdate facilityid formid
-	
+	order sample_number district_name language listingdate name phonenumber facilityid formid
+
 export excel using "$listingdatadir/PREM_`country'_R`round'_SAMPLE.xlsx", firstrow(variables) replace
 save "$listingdatadir/PREM_`country'_R`round'_SAMPLE.dta", replace	
+
+**************************************************************
+* G. Assessment of the listing progress - report
+**************************************************************
+use "$listingdatadir/PREM_`country'_R`round'_LIST.dta", clear
+
+***** G.1 gen listing progress check variables
+
+	gen num_total = 1
 	
+	gen num_interest = 1 if interest==1 /*interested in the study*/
+	gen num_phone = 1 if phone==1 /*PLUS have access to phone numbers*/
+	gen num_language = 1 if language==1 /*PLUS speak in the language*/
+	
+	gen num_listed = 1 if listinginfocomplete==1 /*gave both name and number*/
+		
+	gen numfacilities = 1
+	
+	save temp.dta, replace 
+
+***** G.2 collapse and export tables 
+capture putdocx clear 
+putdocx begin
+putdocx paragraph, halign(center)
+putdocx text ("PREMs `country' pilot"), linebreak bold 
+putdocx text ("Listing progress update: `today'"), linebreak bold 
+
+putdocx paragraph
+putdocx text ("In this note, progress of listing for phone interviews is presented. ")
+putdocx text ("Data mangers produce this note daily during the listing period. ")
+putdocx text ("An important goal is to create a sampling frame that is sufficiently larger than ")
+putdocx text ("the target number of clients to be sampled. ")
+putdocx text ("Considering contact and response rates, the target sample size is ")
+putdocx text ("281 in each district - in order to achieve 150 completed interviews per district. ")
+putdocx text ("Each facility has a different target sample size: 108 in a district hospital, ")
+putdocx text ("67 in a health center, and 13 in a CHPS.")  
+/*
+putdocx paragraph 
+putdocx textblock begin
+In this note, progress of lising for phone interviews is presented. Data mangers 
+produce this note daily during the listing period. An important goal is 
+to create a sampling frame that is sufficiently larger than the target number of 
+clients to be sampled. Considering contact and response rates, the target sample 
+size is 281 in each district - in order to achieve 150 completed interviews per 
+district. Each facility has a different target sample size: 108 in a ditrict hospital, 
+67 in a health center, and 13 in a CHPS.  
+putdocx textblock end
+*/
+
+	*Date and total screened for listing
+	use temp.dta, clear	
+		collapse (sum) num_total num_listed, by(district_name) 
+		
+		putdocx paragraph	
+		putdocx text ("Listing progress - overall"), linebreak bold	
+		putdocx text ("To date, by district:"), linebreak 
+		putdocx text ("- num_total: number of clients screened/approached"), linebreak 
+		putdocx text ("- num_listed: number of clients listed (i.e., who provided name and number for sampling)"), linebreak 
+		putdocx table table = data(*), varnames 
+		
+	use temp.dta, clear	
+		collapse (sum) num_total num_listed, by(district_name listingdate)
+		
+		*putdocx paragraph	
+		*putdocx text ("Listing progress by date"), linebreak bold	
+		*putdocx table table = data(*), varnames 
+			
+		bysort district_name (listingdate) : gen cumnum_listed = sum(num_listed)
+		
+		#delimit; 
+		twoway scatter cumnum_listed listingdate,  
+			by(district_name, 
+				row(1) 
+				title("Cumulative number of listed clients by date and district", size(medium)) 
+				note("Horizontal red line is the target number of clients to sample", 
+					 size(vsmall)) 
+				)
+			connect(l) mlabel(cumnum_listed)	
+			yline(281) ylabel(,labsize(small)) 
+			xlabel(,labsize(small) angle(45))
+			ytitle("Number of clients", size(small)) 
+			xtitle("Date", size(small)) 
+			ysize(3) xsize(6)	
+			;
+			#delimit cr
+
+		graph save Graph "temp.gph", replace
+		graph export "temp.png", replace	
+
+		putdocx paragraph
+		putdocx text ("Listing progress by date and district"), linebreak bold	
+		putdocx image "temp.png", height(3) width(6)					
+		putdocx pagebreak
+		
+	*By district, number of listing progress in detail
+	use temp.dta, clear		
+		collapse (sum) num_*, by(district_name)
+		
+		putdocx paragraph
+		putdocx text ("Listing progress by district, detail"), linebreak bold 
+		putdocx table table = data(*), varnames	
+		putdocx paragraph
+		putdocx text ("- num_total: number of clients screened/approached"), linebreak
+		putdocx text ("- num_interest: number of clients who expressed interest"), linebreak
+		putdocx text ("- num_phone: number of clients have access to phone"), linebreak
+		putdocx text ("- num_language: number of clients who speak the study language"), linebreak
+		putdocx text ("- num_listed: number of clients listed (i.e., who provided name and number for sampling)"), linebreak 		
+			
+		#delimit; 
+		graph bar num_*,  
+			by(district, 
+				row(1) 
+				title("Listing progress by district, detail", size(small)) 
+				note("Horizontal red line is the target number of clients to sample", 
+					 size(vsmall)) 
+				)
+			yline(281) ylabel(,labsize(small))
+			ytitle("Number of clients", size(small)) 
+			blabel(bar)
+			legend( 
+				pos(6) size(vsmall) stack row(1)
+				label(1 "Total asked")
+				label(2 "Have interest")
+				label(3 "Have phone")
+				label(4 "Speak the language" )
+				label(5 "Listed" )
+				)
+			bar(1, color(navy*0.4)) 
+			bar(2, color(navy*0.6)) 
+			bar(3, color(navy*0.8)) 
+			bar(4, color(navy*1.0)) 
+			bar(5, color(navy*2)) 				
+			ysize(3) xsize(6)	
+			;
+			#delimit cr
+
+		graph save Graph "temp.gph", replace
+		graph export "temp.png", replace	
+
+		putdocx paragraph
+		putdocx image "temp.png", height(3) width(6)					
+		putdocx pagebreak
+		
+	*By district and facility, number of listing progress in detail
+	use temp.dta, clear		
+		collapse (sum) num_* (mean) target*, by(district_name type facility_name)
+		order district_name type facility_name
+		sort  district_name type facility_name
+				
+		putdocx paragraph
+		putdocx text ("Listing progress by district and facility, detail"), linebreak bold  
+		
+		levelsof district_name
+		foreach lev in `r(levels)' {
+		
+		#delimit; 
+		graph bar num_* target_sample_size_revised if district_name == "`lev'",  
+			by(type facility_name, 
+				row(2) iscale(*0.5) yrescale
+				title("Listing progress by district and facility, detail - `lev'", size(small)) 
+				note("", 
+					 size(vsmall)) 
+				)
+			ylabel(,labsize(small))
+			ytitle("Number of clients", size(small)) 
+			blabel(bar)
+			legend( 
+				pos(6) size(vsmall) stack row(1)
+				label(1 "Total asked")
+				label(2 "Have interest")
+				label(3 "Have phone")
+				label(4 "Speak the language" )
+				label(5 "Listed" )
+				label(6 "Target sample size" )				
+				)
+			bar(1, color(navy*0.4)) 
+			bar(2, color(navy*0.6)) 
+			bar(3, color(navy*0.8)) 
+			bar(4, color(navy*1.0)) 
+			bar(5, color(navy*2)) 				
+			bar(6, color(cranberry)) 				
+			ysize(8) xsize(8)	
+			;
+			#delimit cr
+
+		graph save Graph "temp.gph", replace
+		graph export "temp.png", replace	
+
+		putdocx paragraph
+		putdocx text ("District: `lev'"), linebreak 
+		putdocx image "temp.png", height(8) width(8)
+		putdocx pagebreak
+		}
+		
+		putdocx paragraph
+		putdocx text ("Data by facility"), linebreak bold	
+		putdocx text ("- num_total: number of clients screened/approached"), linebreak
+		putdocx text ("- num_interest: number of clients who expressed interest"), linebreak
+		putdocx text ("- num_phone: number of clients have access to phone"), linebreak
+		putdocx text ("- num_language: number of clients who speak the study language"), linebreak
+		putdocx text ("- num_listed: number of clients listed (i.e., who provided name and number for sampling)"), linebreak 				
+		putdocx table table = data(*), varnames			
+
+putdocx save "$listingnotedir/ListingProgress_`country'_$date.docx", replace
+
+***CLEAN UP***
+
+local datafiles: dir "$mydir" files "temp*.*"
+
+foreach datafile of local datafiles {
+        rm `datafile'
+}
 
 END OF DATA CLEANING AND MANAGEMENT AND SAMPLING 
