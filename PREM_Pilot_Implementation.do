@@ -5,7 +5,7 @@ capture log close
 set more off
 numlabel, add
 
-* Date of last code update: 5/25/2023
+* Date of last code update: 12/07/2023
 *   See Github for history of changes: 
 *	https://github.com/yoonjoung/WHO_PREM
 *	https://github.com/yoonjoung/WHO_PREM/blob/main/PREM_Pilot_DataManagement_WORKING.do
@@ -53,11 +53,9 @@ global datadir "$mydir/PilotDataProduced/"
 
 *** Define local macro for the survey 
 local country	 		 EXAMPLE /*country name*/	
-local round 			 1 /*round*/		
+local round 			 P /*round*/		
 local year 			 	 2023 /*year of the mid point in data collection*/	
-local month 			 6 /*month of the mid point in data collection*/	
-
-local surveyid 			 259237 /*LimeSurvey survey ID*/
+local month 			 12 /*month of the mid point in data collection*/	
 
 *** Define local macro for response options specific to the country 
 
@@ -73,10 +71,6 @@ local geoname4	 		 Somerset
 local type1 			 District Hospital /*Facility type*/
 local type2 			 Health Center 
 local type3 			 Health Post
-
-/*Facility managing authority: must match with managing_authority numeric code in ORANGE tab*/
-local sector1 			 Public /*Managing authority*/
-local sector2 			 Non Public 				
 		
 *** local macro for analysis (no change needed)  
 local today=c(current_date)
@@ -175,7 +169,7 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 ***** C.3. Calculate rate process metrics by analysis domain 
 
 	use temp.dta, clear
-	collapse (count) num_* , ///
+	collapse (sum) num_*, ///
 		by(country round month year  )
 				
 		gen language="All languages"
@@ -186,7 +180,7 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 		save "$datadir/PREM_Pilot_Process_`country'_R`round'.dta", replace 
 		
 	use temp.dta, clear
-	collapse (count) num_* , ///
+	collapse (sum) num_*, ///
 		by(country round month year language mode)
 
 		gen group ="Study arm"
@@ -196,7 +190,7 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 		save "$datadir/PREM_Pilot_Process_`country'_R`round'.dta", replace 
 		
 	use temp.dta, clear
-	collapse (count) num_* , ///
+	collapse (sum) num_*, ///
 		by(country round month year language mode zdistrict)
 		
 		gen group ="Study arm_District"
@@ -223,7 +217,7 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 		gen submitdate = submit_month + "/" + submit_date
 		tab submitdate
 			
-	collapse (count) num_* , ///
+	collapse (sum) num_*, ///
 		by(country round month year language mode submitdate)
 		
 		gen group ="Study arm_Date"
@@ -233,7 +227,12 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 		save "$datadir/PREM_Pilot_Process_`country'_R`round'.dta", replace 			
 		
 	***** gen axis - for figure axis purposes...
-		gen axis =""
+		
+			tab group, m
+			bysort group: tab mode language, m
+			bysort group: list grouplabel language mode 
+		
+		gen axis =""			
 			replace axis = language + "_" + mode if group=="Study arm" /*study arm*/
 			replace axis = "Pooled" if mode=="All modes" & language=="All languages" /*pooled*/
 			replace axis = grouplabel if group=="Study arm_District" /*district*/
@@ -261,7 +260,10 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 		gen pct_ph_nocnt = num_nocnt / num_samp
 		gen pct_ph_cntsoelse = num_cntsoelse / num_samp
 		gen pct_ph_cntsuccess = num_cntsuccess / num_samp
-						
+		
+		gen pct_ph_cntnocoop = (num_cntsuccess - num_resp) / num_samp
+		gen pct_ph_cntcoop = num_resp / num_samp
+		
 		*Contact rate, correct phone number 
 		gen rate_cnt = (num_cntsoelse + num_cntsuccess) / num_samp
 		
@@ -311,4 +313,4 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Pil
 
 erase temp.dta		
 
-END OF DATA CLEANING AND MANAGEMENT - Yay!!! 
+*END OF DATA CLEANING AND MANAGEMENT - Yay!!! 

@@ -90,24 +90,31 @@ local round 			 P /*round*/
 local year 			 	 2023 /*year of the mid point in data collection*/	
 local month 			 6 /*month of the mid point in data collection*/	
 
-local surveyid 			 885938 /*LimeSurvey survey ID*/
+local surveyid 			 194538 /*LimeSurvey survey ID*/
 
-local startdate 	 20231120 /*First date of the actual listing - in YYYYMMDD */ 
+local startdate 	 20231207 /*First date of the actual listing - in YYYYMMDD */ 
 
 *** Define local macro for response options specific to the country 
 
-local countrylanguage1	 Spanish /*Country language 1*/
+local countrylanguage1	 Bemba /*Country language 1*/
 
 /*Study district names: must match with district code in ORANGE tab*/
-local geoname1	 		 Mfantseman
-local geoname2	 		 Suhum
-local geoname3	 		 West Gonja
-local geoname4	 		 South Dayi
+local geoname1	 		 Lusaka
+local geoname2	 		 Chilanga
+local geoname3	 		 Kapiri Mposhi
+local geoname4	 		 Mkushi
 
 /*Facility type: must match with facility_type numeric code in ORANGE tab*/
-local type1 			 District Hospital 
+local type1 			 First-level Hospital 
 local type2 			 Health Center 
-local type3 			 CHPS
+local type3 			 Health Post
+
+/*Target sample size*/ 
+local districtss 		 177
+local type1ss	 		 53
+local type2ss	 		 44
+local type3ss	 		 18
+
 
 *** local macro for analysis (no change needed)  
 local today=c(current_date)
@@ -259,36 +266,31 @@ drop if submitdate==""
 		replace language = q104b if q100a==2
 
 ***** C.4. Assign facility id <<<<<<<<<<== MUST BE ADAPTED: MAKE IT CONSISTENT WITH THE LIME SURVEY FORM
-		
+	
+	* Q100b series is in the order of facilities that are programmed in limesurvey backend
+	* Check ORANGE TAB
+	
 	gen facilityid=.
-		replace facilityid = 1101 if q100bsq001==1 
+		replace facilityid = 1101 if q100bsq001==1
 		replace facilityid = 1202 if q100bsq002==1
 		replace facilityid = 1203 if q100bsq003==1
 		replace facilityid = 1304 if q100bsq004==1
 		replace facilityid = 1305 if q100bsq005==1
-		replace facilityid = 1306 if q100bsq006==1
-		replace facilityid = 4101 if q100bsq007==1
-		replace facilityid = 4202 if q100bsq008==1
-		replace facilityid = 4203 if q100bsq009==1
-		replace facilityid = 4304 if q100bsq010==1
-		replace facilityid = 4305 if q100bsq011==1
-		replace facilityid = 4306 if q100bsq012==1
-		
-	/*		
-	Saltpond Municipal Hospital
-	Abandze Health Centre
-	Earthly Peace  Clinic
-	Taido CHPS
-	Ekurabadzi CHPS
-	Sanford World Medical
-	
-	Peki District hospital
-	Adzokoe Health Centre
-	Tsanakpe Health Centre
-	Tsatee CHPS
-	Living Oasis Clinic
-	Peki Wudume CHPS
-	*/		
+		replace facilityid = 2101 if q100bsq006==1
+		replace facilityid = 2202 if q100bsq007==1
+		replace facilityid = 2203 if q100bsq008==1
+		replace facilityid = 2304 if q100bsq009==1
+		replace facilityid = 2305 if q100bsq010==1
+		replace facilityid = 3101 if q100bsq011==1
+		replace facilityid = 3202 if q100bsq012==1
+		replace facilityid = 3203 if q100bsq013==1
+		replace facilityid = 3304 if q100bsq014==1
+		replace facilityid = 3305 if q100bsq015==1
+		replace facilityid = 4101 if q100bsq016==1
+		replace facilityid = 4202 if q100bsq017==1
+		replace facilityid = 4203 if q100bsq018==1
+		replace facilityid = 4304 if q100bsq019==1
+		replace facilityid = 4305 if q100bsq020==1
 	
 ***** C.5 sort by facility id
 		
@@ -311,28 +313,27 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		/* 
 		this worksheet aka ORANGE TAB has background characteristics of the sentinel facilites.
 		PREMs team in the country will provide this information
-		
-		Contains data
-		  obs:            42                          
-		 vars:            15                          
-		 size:         5,628    
                        
 		--------------------------------------------------------------------------------------------------
 					  storage   display    value
 		variable name   type    format     label      variable label
 		--------------------------------------------------------------------------------------------------
 		
+		province        str7    %9s                   Province
+		district_name   str13   %13s                  District_name
+		facility_name   str31   %31s                  facility_name
+		facility_type~e str19   %19s                  facility_type_name
+		managing_auth~e str10   %10s                  managing_authority_name
+		number          byte    %10.0g                number
 		facilityid      int     %10.0g                facilityid
 		district        byte    %10.0g                district
 		facility_type   byte    %10.0g                facility_type
 		managing_auth~y byte    %10.0g                managing_authority
-		target_sample~e int     %10.0g                target_sample_size
+		target_sample~e byte    %10.0g                target_sample_size
 		mode_design     str9    %9s                   mode_design
 		language_design str7    %9s                   language_design
-		target_sample~d int     %10.0g                target_sample_size_revised
 
 		--------------------------------------------------------------------------------------------------
-		Sorted by: 
 
 	*/ 
 	
@@ -349,14 +350,15 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		
 		/*
 			
-		.                 tab _merge
+				.                 tab _merge
 
 			 _merge |      Freq.     Percent        Cum.
 		------------+-----------------------------------
-				  1 |          6       37.50       37.50
-				  3 |         10       62.50      100.00
+				  1 |         12       57.14       57.14 <= facilities with no lising data uploaded yet
+				  3 |          9       42.86      100.00 <= facilities with lising data uploaded
 		------------+-----------------------------------
-			  Total |         16      100.00
+			  Total |         21      100.00
+
 
 		*/
 		
@@ -395,10 +397,13 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 * D.A Expand and scramble the mock data <= DELETE THIS SECTION WHEN WORKING WITH REAL DATA
 **************************************************************
 
-	expand 200 
-
+	expand 50 
+		
 	* CHANGE THE LISTING DATE IN ONE CASE FOR AN EXAMPLE 
-	replace listingdate = listingdate + 1 if formid==55
+		sum formid
+		return list
+	replace listingdate = listingdate + 1 if formid==`r(min)'
+	replace listingdate = listingdate - 1 if formid==`r(max)'
 	
 	* RECODE 
 	foreach var of varlist interest phone language{
@@ -411,7 +416,6 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		recode interest	(1=0) (0=1) if random>0.90
 		recode phone 	(1=0) (0=1) if random>0.70 
 		recode language	(1=0) (0=1) if random>0.50
-		recode agree	(1=0) (0=1) if random>0.45
 		drop random 
 	
 	* MAKE IT INTERNALLY CONSISTENT
@@ -422,7 +426,7 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		foreach var of varlist name phonenumber phonenumber2{
 		replace `var'="" if agree==0
 		}
-		
+	
 	* DROP CASES FROM CHPS TO MAKE IT MORE REALISTIC 
 		bysort facilityid: gen temp = _n
 		drop if temp>50 & type==3 
@@ -433,6 +437,7 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 	drop listinginfocomplete 
 	gen byte listinginfocomplete = name!="" & phonenumber!="" /*those who provided name and number*/
 */	
+
 **************************************************************
 * E. Export 
 **************************************************************
@@ -521,11 +526,20 @@ keep if listinginfocomplete==1
 		
 ***** F.4 Export 		
 
+	*** Add 0 infront of the phone number (COUNTRY SPECIFIC)
+	gen zero = "0"
+	egen phonenumbertemp = concat(zero phonenumber)
+		list phonenumber*
+		drop phonenumber
+	rename phonenumbertemp phonenumber	
+
 	*** Keep only variables essential to call/interview	
-	keep  name phonenumber district_name facility_name listingdate facilityid formid
+	keep  name phonenumber district_name facility_name listingdate facilityid formid district 
+	*keep  name phonenumber district_name facility_name listingdate facilityid formid district type
 	
 	*** Sort and create a serial number
 	sort district_name listingdate facility_name formid
+	drop formid
 	
 	*** Create extra variables that are useful for interview management 
 	gen sample_number = _n
@@ -536,9 +550,9 @@ keep if listinginfocomplete==1
 	lab var language "interview language"
 	
 	*** Order 
-	order sample_number district_name language listingdate name phonenumber facilityid formid
+	order district_name district language listingdate facility_name facilityid sample_number name phonenumber 
 
-export excel using "$listingdatadir/PREM_`country'_R`round'_SAMPLE.xlsx", firstrow(variables) replace
+export excel using "$listingdatadir/PREM_`country'_R`round'_SAMPLE.xlsx", firstrow(variables) replace nolabel
 save "$listingdatadir/PREM_`country'_R`round'_SAMPLE.dta", replace	
 
 **************************************************************
@@ -573,21 +587,12 @@ putdocx text ("Data mangers produce this note daily during the listing period. "
 putdocx text ("An important goal is to create a sampling frame that is sufficiently larger than ")
 putdocx text ("the target number of clients to be sampled. ")
 putdocx text ("Considering contact and response rates, the target sample size is ")
-putdocx text ("281 in each district - in order to achieve 150 completed interviews per district. ")
-putdocx text ("Each facility has a different target sample size: 108 in a district hospital, ")
-putdocx text ("67 in a health center, and 13 in a CHPS.")  
-/*
-putdocx paragraph 
-putdocx textblock begin
-In this note, progress of lising for phone interviews is presented. Data mangers 
-produce this note daily during the listing period. An important goal is 
-to create a sampling frame that is sufficiently larger than the target number of 
-clients to be sampled. Considering contact and response rates, the target sample 
-size is 281 in each district - in order to achieve 150 completed interviews per 
-district. Each facility has a different target sample size: 108 in a ditrict hospital, 
-67 in a health center, and 13 in a CHPS.  
-putdocx textblock end
-*/
+putdocx text ("size is `districtss' in each district - in order to achieve 150 completed interviews per ")
+putdocx text ("district. Each facility has a different target sample size: `type1ss' in a `type1' , ")
+putdocx text ("`type2ss' in a `type2', and `type3ss' in a `type3'."), linebreak  
+putdocx text (" "), linebreak  
+putdocx text ("Note: the target sample size was estimated based on various assumptions. ")  
+putdocx text ("During the pilot, we may need to reassess the assumptions and adjust the target sample size.")  
 
 	*Date and total screened for listing
 	use temp.dta, clear	
@@ -618,7 +623,7 @@ putdocx textblock end
 					 size(vsmall)) 
 				)
 			connect(l) mlabel(cumnum_listed)	
-			yline(281) ylabel(,labsize(small)) 
+			yline(`districtss') ylabel(,labsize(small)) yscale(range(0, `districtss'))
 			xlabel(,labsize(small) angle(45))
 			ytitle("Number of clients", size(small)) 
 			xtitle("Date", size(small)) 
@@ -656,7 +661,7 @@ putdocx textblock end
 				note("Horizontal red line is the target number of clients to sample", 
 					 size(vsmall)) 
 				)
-			yline(281) ylabel(,labsize(small))
+			yline(`districtss') ylabel(,labsize(small))
 			ytitle("Number of clients", size(small)) 
 			blabel(bar)
 			legend( 
@@ -696,7 +701,7 @@ putdocx textblock end
 		foreach lev in `r(levels)' {
 		
 		#delimit; 
-		graph bar num_* target_sample_size_revised if district_name == "`lev'",  
+		graph bar num_* target_sample_size if district_name == "`lev'",  
 			by(type facility_name, 
 				row(2) iscale(*0.5) yrescale
 				title("Listing progress by district and facility, detail - `lev'", size(small)) 
@@ -713,7 +718,7 @@ putdocx textblock end
 				label(3 "Have phone")
 				label(4 "Speak the language" )
 				label(5 "Listed" )
-				label(6 "Target sample size" )				
+				label(6 "Target sample size" "(Initial)" )				
 				)
 			bar(1, color(navy*0.4)) 
 			bar(2, color(navy*0.6)) 

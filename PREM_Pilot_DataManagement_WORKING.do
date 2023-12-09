@@ -7,7 +7,7 @@ numlabel, add
 
 * Date of the PREM questionniare version: Questionnaire_8SEPT2023_WORKING
 *	https://worldhealthorg-my.sharepoint.com/:w:/r/personal/banicag_who_int/_layouts/15/Doc.aspx?sourcedoc=%7BA1DE21BB-2BD1-4F22-B36B-4B4EBC0AE145%7D&file=Questionnaire_8SEPT2023_WORKING.docx&wdLOR=c2F996D4A-4A15-9D4B-A8F6-4242767CAB35&action=default&mobileredirect=true
-* Date of last code update: 9/21/2023
+* Date of last code update: 12/07/2023
 *	https://github.com/yoonjoung/WHO_PREM
 *	https://github.com/yoonjoung/WHO_PREM/blob/main/PREM_Pilot_DataManagement_WORKING.do
 
@@ -57,7 +57,10 @@ numlabel, add
 *****D.1. Merge with facility information 
 *****D.2. More cleaning 
 
+* D.A. Expand and scramble the mock data <<<<<<<<<<== DELETE THIS SECTION WHEN WORKING WITH REAL DATA
+
 * E. Create analytical variables 
+*****E.0. Drop data that were entered for practice and test <<<<<<<<<<== ACTIVATE THIS SECTION
 *****E.1. Construct analysis variables 
 *****E.2. Export Clean Respondent-level data to chartbook (BLUE TAB)
 
@@ -76,7 +79,7 @@ global mydir "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/4_DataAnalysis/"
 cd $mydir
 
 *** Directory for downloaded CSV data (can be same or different from the main directory)
-global downloadcsvdir "$mydir/ExportedCSV_FromLimeSurvey/"
+global downloadcsvdir "$mydir/PilotExportedCSV_FromLimeSurvey/"
 
 *** Define a directory for the chartbook (can be same or different from the main directory)
 global chartbookdir "$mydir"
@@ -92,9 +95,12 @@ global datanotedir "$mydir/PilotDataNote/"
 local country	 		 EXAMPLE /*country name*/	
 local round 			 P /*round*/		
 local year 			 	 2023 /*year of the mid point in data collection*/	
-local month 			 6 /*month of the mid point in data collection*/	
+local month 			 12 /*month of the mid point in data collection*/	
 
-local surveyid 			 872833 /*LimeSurvey survey ID*/
+local surveyid_EN 		 221751 /*LimeSurvey survey ID for ENGLISH form*/
+local surveyid_CL 		 636743 /*LimeSurvey survey ID for COUNTRY LANGUAGE form*/
+
+local startdate 	 	 20231209 /*First date of the actual listing - in YYYYMMDD */ 
 
 *** Define local macro for response options specific to the country 
 
@@ -110,10 +116,6 @@ local geoname4	 		 Somerset
 local type1 			 District Hospital /*Facility type*/
 local type2 			 Health Center 
 local type3 			 Health Post
-
-/*Facility managing authority: must match with managing_authority numeric code in ORANGE tab*/
-local sector1 			 Public /*Managing authority*/
-local sector2 			 Non Public 		
 		
 *** local macro for analysis (no change needed)  
 local today		= c(current_date)
@@ -125,22 +127,22 @@ global date		= subinstr("`c_today'", " ", "",.)
 **************************************************************
 
 *****B.1. Import raw data from LimeSurvey 
-*import delimited using "https://extranet.who.int/dataformv3/index.php/plugins/direct?plugin=CountryOverview&docType=1&sid=`surveyid'&language=en&function=createExport", case(preserve) clear
-	/*
+import delimited using "https://extranet.who.int/dataformv3/index.php/plugins/direct?plugin=CountryOverview&docType=1&sid=`surveyid_EN'&language=en&function=createExport", case(preserve) clear
 	
-	NOTE
+	d, short	
+	gen limesurveyform = "English"	
+	save temp.dta, replace
 
-	Replace part of the link before plugins with the part in the country-specific link. So, for example,
-
-	If the link is:
-	https://who.my-survey.host/index.php/plugins/direct?plugin=CountryOverview&docType=1&sid=259237&language=en&function=createExport
-
-	Code should be:
-	import delimited using "https://who.my-survey.host/index.php/plugins/direct?plugin=CountryOverview&docType=1&sid=`surveyid'&language=en&function=createExport", case(preserve) clear
+import delimited using "https://extranet.who.int/dataformv3/index.php/plugins/direct?plugin=CountryOverview&docType=1&sid=`surveyid_CL'&language=en&function=createExport", case(preserve) clear
 	
-	*/
-
-import delimited "$downloadcsvdir/LimeSurvey_PREM_EXAMPLE.csv", case(preserve) clear /*THIS LINE ONLY FOR PRACTICE*/
+	d, short
+	gen limesurveyform = "`countrylanguage1'"
+	
+	append using temp.dta, force
+		
+*IF NO TEST DATA ARE ENTERED YET, IMPORT MOCK DATA CREATED BY YJ
+use "$downloadcsvdir/LimeSurvey_PREM_EXAMPLE_20231207.dta", clear /*SUPPRESS THIS WHEN WORKING WITH REAL DATA*/
+*/
 
 *****B.2. Export/save the data daily in CSV form with date 	
 
@@ -150,7 +152,7 @@ export delimited using "$datadir/LimeSurvey_PREM_`country'_R`round'_$date.csv", 
 
 	/*MASK idenitifiable information for respondents/interviewers.*/
 	*Interviewer name 
-	foreach var of varlist Q002 {
+	foreach var of varlist Q002SQ001comment {
 		replace `var'=""
 		}		
 		
@@ -169,10 +171,10 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Cli
 *****B.4. Drop duplicate cases 
 
 	* B.4.1 check variables with "id" in their names
-		lookfor id
+		lookfor *id
 		
 		*****CHECK HERE: 
-		codebook id 	
+		codebook *id 	
 		*	this is an ID variable generated by LimeSurvey, not client ID
 		*	do not use it for analysis 
 		*	still there should be no missing	
@@ -190,10 +192,10 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Cli
 		drop nvarmiss allmissing
 	
 	* B.4.3 check duplicates, based on unique ID variables for clients
-		duplicates tag A004 A005 A006 A007, gen(duplicate) 
+		duplicates tag A004 A005  A007, gen(duplicate) 
 		
 		*****CHECK HERE: 	
-		tab duplicate, m
+		tab duplicate, m		
 		*	there should be no 1 or higher 
 		* 	if there is any, 
 		*	the following will identify the latest entry for the duplicates
@@ -221,8 +223,8 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Cli
 			format submitdate %tc 
 			list submitdate* in 1/5			
 				
-		sort A004 A005 A006 A007 submitdate
-		list A004 A005 A006 A007 submitdate if duplicate!=0  
+		sort A004 A005  A007 submitdate
+		list A004 A005  A007 submitdate if duplicate!=0  
 		*****CHECK HERE: 
 		*	check submitdate within each repeated client, 
 		*	Again, in the mock dataset, 
@@ -230,35 +232,20 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Cli
 
 		*****drop duplicates before the latest submission 
 		egen double submitdatelatest = max(submitdate) if duplicate!=0, ///
-			by(A004 A005 A006 A007) /*LATEST TIME WITHIN EACH DUPLICATE*/					
+			by(A004 A005  A007) /*LATEST TIME WITHIN EACH DUPLICATE*/					
 						
 			*format %tcnn/dd/ccYY_hh:MM submitdatelatest /*"format line without seconds*/
 			format %tcnn/dd/ccYY_hh:MM:SS submitdatelatest /*"format line with seconds*/
 			
-			sort A004 A005 A006 A007 submitdate
-			list A004 A005 A006 A007 submitdate* if duplicate!=0  
-
-			/*
-			.                         list A004 A005 A006 A007 submitdate* if duplicate!=0  
-
-				 +--------------------------------------------------------------------------------------------+
-				 | A004   A005   A006    A007     submitdate_string           submitdate     submitdatelatest |
-				 |--------------------------------------------------------------------------------------------|
-			100. |    1    122      2   88381   2022-09-16 23:59:15   16sep2022 23:59:15   9/17/2022 11:59:15 |
-			101. |    1    122      2   88381   2022-09-17 23:59:15   17sep2022 23:59:15   9/17/2022 11:59:15 |
-			626. |    4    421      3   25128   2022-09-16 23:59:15   16sep2022 23:59:15   9/18/2022 11:59:15 |
-			627. |    4    421      3   25128   2022-09-17 23:59:15   17sep2022 23:59:15   9/18/2022 11:59:15 |
-			628. |    4    421      3   25128   2022-09-18 23:59:15   18sep2022 23:59:15   9/18/2022 11:59:15 |
-				 +--------------------------------------------------------------------------------------------+
-
-			*/	
+			sort A004 A005  A007 submitdate
+			list A004 A005  A007 submitdate* if duplicate!=0  
 			
 	* B.4.f drop duplicates
 	
 		drop if duplicate!=0  & submitdate!=submitdatelatest 
 		
 		*****confirm there's no duplicate cases, based on facility code
-		duplicates report A004 A005 A006 A007,
+		duplicates report A004 A005  A007,
 		*****CHECK HERE: 
 		*	Now there should be no duplicate, yay!!   
 
@@ -297,99 +284,85 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Cli
 
 *****C.4. Consolidate interview result variable Q403 - 
 
-	* OPTION 1: if both modes are used in a country 
-
-	gen q403=.
-		replace q403 = q403b if a001==1 /*PHONE*/
-		replace q403 = q403a if a001==2 /*FTF*/
-	*/
-		
-	/*CHECK THIS WITH ACTUAL LIMESURVEY DATA. do we even need option 2???
-	* OPTION 2: if only one mode was used in a country 
+	gen q403=""
+		replace q403 = q403b if a001=="A1" /*PHONE*/
+		replace q403 = q403a if a001=="A2" /*FTF*/
 	
-	gen q403=.
-	
-		capture confirm variable q403a
-		if !_rc {
-		replace q403 = q403a 
-		}
-		else {
-			capture confirm variable q403b
-			if !_rc {
-			replace  q403 = q403b 
-			}	
-		}	
-		
-	sum q4*	
-	set more on
-	list q403*
-	
-	*/	
-		
 *****C.5. Find non-numeric variables and desting 
 
 	*****************************
 	* Cover
 	*****************************
 	sum a*
-		
+
+	foreach var of varlist a001 a010 a011 {	
+		replace `var' = usubinstr(`var', "A", "", 1) 
+		replace `var' = "88" if `var'=="-oth-"
+		destring `var', replace 
+		}
+
+	sum a*
+
+	*****************************
+	* Section 0
+	*****************************
+	sum q0*
+	
+	foreach var of varlist q001 {	
+		replace `var' = usubinstr(`var', "A", "", 1) 
+		destring `var', replace 
+		}
+
+	sum q001		
+	
 	*****************************
 	* Section 1
 	*****************************
 	sum q1*
 	
-	/*
-	foreach var of varlist q106 q107 q108 q110 {	
+	drop q100ab /*drop lime survey internal variable to check errors*/
+
+	foreach var of varlist q1* {	
 		replace `var' = usubinstr(`var', "A", "", 1) 
-		replace `var' = "88" if `var'=="-oth-"
 		destring `var', replace 
 		}
-	*/
-	
+
 	sum q1*			
 
 	*****************************	
 	* Section 2
 	*****************************
 	sum q2*	
-	
-	/*
-	foreach var of varlist q208* q210*  {	
+		
+	foreach var of varlist q2*  {	
 		replace `var' = usubinstr(`var', "A", "", 1) 
-		replace `var' = "88" if `var'=="-oth-"
 		destring `var', replace 
 		}	
-	*/
-	
+		
 	sum q2*		
 	
 	*****************************	
 	* Section 3
 	*****************************
 	sum q3*	
-	
-	/*
-	foreach var of varlist q208* q210*  {	
+		
+	foreach var of varlist q302 q303  {	
 		replace `var' = usubinstr(`var', "A", "", 1) 
-		replace `var' = "88" if `var'=="-oth-"
 		destring `var', replace 
 		}	
-	*/
-	
+		
 	sum q3*		
-	
+
 	*****************************	
 	* Section 4
 	*****************************
 	sum q4*
-	
-	/*
-	foreach var of varlist q403* q404* q405* q407*  {	
+		
+	foreach var of varlist q4*  {	
 		replace `var' = usubinstr(`var', "A", "", 1) 
 		destring `var', replace 
 		}		
-	*/
-	
+		
 	sum q4*
 		
 *****C.6. Label values 
@@ -586,10 +559,13 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Cli
 	lab values q302 gender; 
 	
 	lab define education
-		1 "1.Never attended school"
-		2 "2.Primary"
-		3 "3.Secondary"
-		4 "4.College or higher"
+		1 "Never attended school"
+		2 "Primary school"
+		3 "Middle school" 
+		4 "JSS/JHS"
+		5 "SSS/SHS"
+		6 "Vocational/technical"
+		7 "Tertiary"
 		;
 	lab values q303 education; 
 
@@ -622,7 +598,6 @@ export excel using "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Cli
 *****C.7. Prepare for merge with facility information 
 			
 	rename a005 facilityid 
-	rename a006 service
 	rename a007 samplenumber 	
 	
 	sort facilityid 	
@@ -645,18 +620,20 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		PREMs team in the country will provide this information
 		
 		Contains data
-		  obs:            27                          
+		  obs:            36                          
 		 vars:             4                          
-		 size:           135                          
-		------------------------------------------------------------------------------------------------------------------------------------------
+		 size:           180                          
+		------------------------------------------------------------------------------------------
 					  storage   display    value
 		variable name   type    format     label      variable label
-		------------------------------------------------------------------------------------------------------------------------------------------
-		facilityid    int     %10.0g                facilityid
+		------------------------------------------------------------------------------------------
+		facilityid      int     %10.0g                facilityid
 		district        byte    %10.0g                district
 		facility_type   byte    %10.0g                facility_type
 		managing_auth~y byte    %10.0g                managing_authority
-		---------------------------------------------------------------------
+		------------------------------------------------------------------------------------------
+		Sorted by: 
+
 		*/ 
 	
 		codebook facilityid /*this is assigned for the study, same with A005 in PREMs*/ 
@@ -665,11 +642,26 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 	merge facilityid using temp.dta, 
 	
 		tab _merge
+		
 		*****CHECK HERE: 
 		*	all should be 3 (i.e., match) by the end of the data collection*/
+		*	below is the distribution with mock data
+		*	no one from one facility has been interviewed yet
+		/*
+		
+			 _merge |      Freq.     Percent        Cum.
+		------------+-----------------------------------
+				  1 |          1        0.25        0.25
+				  3 |        399       99.75      100.00
+		------------+-----------------------------------
+			  Total |        400      100.00
 
+		*/
+		
+		keep if _merge==3
+		
 		drop _merge*
-
+		
 *****D.2. More cleaning 
 	
 	rename facility_type type
@@ -697,20 +689,43 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		2 "`sector2'" 
 		;
 	lab values sector sector; 		
-	
-	lab define service
-		0 "All"
-		1 "`service1'"
-		2 "`service2'" 
-		3 "`service3'"
-		;
-	lab values service service; 	
 
 	#delimit cr
+
+**************************************************************
+* D.A Expand and scramble the mock data <= DELETE THIS SECTION WHEN WORKING WITH REAL DATA
+**************************************************************
+/*
+	expand 50 
 	
+	* SCRAMBLE
+	set seed 410	
+	foreach var of varlist q1* q2* q302 q303{
+	generate random = runiform()
+		recode `var' (1=2) (4=3) if random>0.80
+		recode `var' (2=1) (4=3) if random<0.20
+		drop random 
+	}
+	
+*/	
+
 **************************************************************
 * E. Create analytical variables 
 **************************************************************
+
+/*
+***** E.0 Drop data that were entered for practice and test <= ACTIVATE THIS SECTION WHEN WORKING WITH REAL DATA
+
+	codebook a002
+	gen double interviewdate 	= dofc(clock(a002, "YMD hms")) 
+	*gen listingdate = dofc(submitdate) 
+	format interviewdate  %td
+	
+		tab interviewdate, m
+	drop if interviewdate < date("`startdate'","YMD") 
+		tab interviewdate, m
+		
+*/
 
 *****E.1. Construct analysis variables 
 
@@ -727,15 +742,14 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		lab var facilityid "facility ID from sample list" 
 		*/
 		
-		gen str3 st_facilityid = string(facilityid,"%03.0f")
-		gen str1 st_service = string(service,"%01.0f")
-		gen str3 st_samplenumber = string(samplenumber,"%03.0f")
+		gen str4 st_facilityid = string(facilityid,"%04.0f")
+		gen str4 st_samplenumber = string(samplenumber,"%04.0f")
 		
 		codebook st_*
 		
-		gen clientid = st_facilityid + "_" + st_service + "_" + st_samplenumber 
+		gen clientid = st_facilityid + "_" + st_samplenumber 
 		
-		codebook id clientid
+		codebook *id
 		
 		gen country = "`country'"
 		gen round 	= "`round'"
@@ -998,31 +1012,6 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 		
 			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 	
 
-/*** By language and by mode: overall and by subgroup
-
-	foreach designvar of varlist mode language{
-	
-		use temp.dta, clear
-		collapse (count) obs (mean) x* (mean) y_* yy_* yyy_* , ///
-			by(country `designvar' round month year  )
-			
-			append using "$datadir/summary_PREM_`country'_R`round'.dta"	, force	
-			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
-
-		use temp.dta, clear		
-		foreach subgroupvar of varlist zage zgender zedu zdepression zdistrict ztype zsector{
-		
-		preserve
-		collapse (count) obs (mean) x* (mean) y_* yy_* yyy_*, ///
-			by(country `designvar' round month year `subgroupvar')
-			
-			append using "$datadir/summary_PREM_`country'_R`round'.dta"	, force	
-			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
-		restore
-		}
-	}
-*/
-
 *** By language AND mode (study arm): overall and by subgroup			
 
 		use temp.dta, clear
@@ -1151,17 +1140,16 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 			title("Distribution of denominator size") ///
 			xtitle("Number of observations in denominator") ///
 			note("Red vertical line: median" "Blue vertical line: 25")
-		*	Check the distribution. Figure out what rows have a small N
+		*	Check the distribution. Figure out what rows that have a small N
 
 		list mode language group grouplabel obs if regexm(grouplabel, "Other/NoResponse")
 		list mode language group grouplabel obs if regexm(grouplabel, "Only")
 		list mode language group grouplabel obs if obs<25
-
+				
 		foreach var of varlist x_* y_* yy_* yyy_* {
 			replace `var' =. if obs<25
-			*replace `var' =. if regexm(grouplabel, "Other/NoResponse")
 		}
-	
+				
 	***** replace grouplabel and check duplicates
 	
 		replace grouplabel = language + "_" + mode + "_" + group + "_" + grouplabel 
