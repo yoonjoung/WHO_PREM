@@ -106,7 +106,7 @@ preserve
 		graph bar num_samp num_cntsuccess num_resp num_comp50 num_comp,
 			by(studyarm, 
 				row(1)
-				title("Contact and consent rates among those who are sampled", size(medium))
+				title("", size(small))				
 				note("Update as of: $date", size(vsmall)) )
 			ytitle("Number") 
 			legend( 
@@ -127,10 +127,22 @@ preserve
 		;	
 		#delimit cr	
 
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .plotregion1.subtitle[2].style.editstyle fillcolor(white) editcopy
+		gr_edit .plotregion1.subtitle[2].style.editstyle linestyle(color(white)) editcopy
+		// subtitle[2] edits
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color
+		
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Number of those who are sampled, contacted, consented, and responded, by study arm"), bold linebreak	
 putdocx image "temp.png", height(3) width(6)			
 restore
 }
@@ -149,7 +161,7 @@ preserve
 		graph bar rate_cnt rate_cntsuccess rate_coop ,
 			by(studyarm, 
 				row(1)
-				title("Contact and consent rates among those who are sampled", size(medium))
+				title("", size(small))
 				note("Update as of: $date", size(vsmall)) )
 			ytitle("Response rate (%)") ylabel(0 (20) 100)
 			legend( 
@@ -166,17 +178,29 @@ preserve
 		;	
 		#delimit cr	
 		
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .plotregion1.subtitle[2].style.editstyle fillcolor(white) editcopy
+		gr_edit .plotregion1.subtitle[2].style.editstyle linestyle(color(white)) editcopy
+		// subtitle[2] edits
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color
+		
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Contact and consent rates among those who are sampled, by study arm"), bold linebreak
 putdocx image "temp.png", height(3) width(6)			
 		
 		#delimit;
 		graph bar rate_resp* ,
 			by(studyarm, 
 				row(1)
-				title("Response rate among those who consented", size(medium))
+				title("", size(small))
 				note("Update as of: $date", size(vsmall)) )
 			ytitle("Response rate (%)") ylabel(0 (20) 100)
 			legend( 
@@ -191,10 +215,22 @@ putdocx image "temp.png", height(3) width(6)
 		;	
 		#delimit cr	
 		
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .plotregion1.subtitle[2].style.editstyle fillcolor(white) editcopy
+		gr_edit .plotregion1.subtitle[2].style.editstyle linestyle(color(white)) editcopy
+		// subtitle[2] edits
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color
+		
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Response rate among those who consented, by study arm"), bold linebreak
 putdocx image "temp.png", height(3) width(6)	
 
 		keep if regexm(studyarm, "Phone")==1
@@ -206,7 +242,7 @@ putdocx image "temp.png", height(3) width(6)
 			stack
 			by(studyarm, 
 				col(1)
-				title("Percent distribution among those sampled", size(medium))
+				title("", size(small))
 				note("Update as of: $date", size(vsmall)) )
 			ytitle("(%)") ylabel(0 (20) 100)
 			legend( 
@@ -226,10 +262,22 @@ putdocx image "temp.png", height(3) width(6)
 		;	
 		#delimit cr	
 		
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .plotregion1.subtitle[2].style.editstyle fillcolor(white) editcopy
+		gr_edit .plotregion1.subtitle[2].style.editstyle linestyle(color(white)) editcopy
+		// subtitle[2] edits
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color
+		
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Among those sampled, percent distribution by call result"), bold linebreak
 putdocx image "temp.png", height(3) width(6)			
 
 restore
@@ -263,7 +311,7 @@ preserve
 			
 		#delimit;
 		graph twoway line num_compcum* date , 
-			title("Cumulative number of completed interviews over time")
+			title("")
 			note("Update as of: $date", size(vsmall)) 
 			ytitle("Cumulative number") 		
 			yline(150)
@@ -277,16 +325,24 @@ preserve
 			ysize(3) xsize(6)	
 		;	
 		#delimit cr
+
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color		
 		
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Cumulative number of completed interviews over time, by study arm"), bold linebreak
 putdocx image "temp.png", height(3) width(6)		
 			
 		#delimit;
 		graph twoway line num_callcumPhone* date , 
-			title("Cumulative number of calls made over time")
+			title("")
 			note("Update as of: $date", size(vsmall)) 
 			ytitle("Cumulative number") 		
 			legend( 
@@ -298,10 +354,18 @@ putdocx image "temp.png", height(3) width(6)
 		;	
 		#delimit cr
 		
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color		
+		
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Cumulative number of calls made over time, by study arm"), bold linebreak
 putdocx image "temp.png", height(3) width(6)		
 
 restore 
@@ -338,7 +402,7 @@ putdocx text ("1. Summary and domain-specific PREMs: overall"), bold linebreak
 		graph hbar yyy_w dummy yy_fc - yy_safe ,
 			by(grouplabel, 
 				row(1)
-				title("Summary and domain-specific PREMs score, all", size(small))
+				title("", size(small))
 				note("Preliminary results. Update as of: $date", size(vsmall))
 				legend(pos(3)) )
 			ytitle("Score (0-100)", size(small)) yscale(r(0 100)) 
@@ -369,10 +433,25 @@ putdocx text ("1. Summary and domain-specific PREMs: overall"), bold linebreak
 		;	
 		#delimit cr	
 
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .plotregion1.subtitle.style.editstyle fillcolor(white) editcopy
+		gr_edit .plotregion1.subtitle.style.editstyle linestyle(color(white)) editcopy
+		// subtitle edits
+
+		gr_edit .plotregion1.subtitle.style.editstyle size(small) editcopy
+		// subtitle size
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color
+		
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Summary and domain-specific PREMs score"), bold linebreak
 putdocx image "temp.png", height(3) width(6)
 }
 *****2. Summary and domain-specific PREMs: by study arm
@@ -390,7 +469,7 @@ putdocx text ("2. Summary and domain-specific PREMs: by study arm"), bold linebr
 		graph hbar yyy_w dummy yy_fc - yy_safe ,
 			by(grouplabel, 
 				col(1)
-				title("Summary and domain-specific PREMs score" "by study arm", size(small))
+				title("", size(small))
 				note("Preliminary results. Update as of: $date", size(vsmall))
 				legend(pos(3)) )
 			ytitle("Score (0-100)", size(small)) yscale(r(0 100)) 
@@ -422,13 +501,25 @@ putdocx text ("2. Summary and domain-specific PREMs: by study arm"), bold linebr
 		;	
 		#delimit cr	
 
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .plotregion1.subtitle[2].style.editstyle fillcolor(white) editcopy
+		gr_edit .plotregion1.subtitle[2].style.editstyle linestyle(color(white)) editcopy
+		// subtitle[2] edits
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color
+		
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Summary and domain-specific PREMs score, by study arm"), bold linebreak
 putdocx image "temp.png", height(7.5) width(6)
 }
-
+/*
 putdocx pagebreak	
 putdocx paragraph
 putdocx text ("2.1. Summary and domain-specific PREMs: by district"), bold linebreak
@@ -446,7 +537,7 @@ putdocx text ("2.1. Summary and domain-specific PREMs: by district"), bold lineb
 		graph hbar yyy_w dummy yy_fc - yy_safe ,
 			by(grouplabel, 
 				col(1)
-				title("Summary and domain-specific PREMs score" "by study arm", size(medium))
+				title("", size(small))
 				note("Preliminary results. Update as of: $date", size(vsmall))
 				legend(pos(3)) )
 			ytitle("Score (0-100)", size(small)) yscale(r(0 100)) 
@@ -478,13 +569,25 @@ putdocx text ("2.1. Summary and domain-specific PREMs: by district"), bold lineb
 		;	
 		#delimit cr	
 
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .plotregion1.subtitle[2].style.editstyle fillcolor(white) editcopy
+		gr_edit .plotregion1.subtitle[2].style.editstyle linestyle(color(white)) editcopy
+		// subtitle[2] edits
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color
+		
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Summary and domain-specific PREMs score, by district"), bold linebreak
 putdocx image "temp.png", height(7.5) width(6)
 }
-
+*/
 *****3. Summary and domain-specific PREMs: by background characteristics 
 putdocx pagebreak	
 putdocx paragraph
@@ -512,7 +615,7 @@ putdocx text ("3.1. Clients' Age"), bold linebreak
 			over(axis)	
 			by(studyarm, 
 				col(1)
-				title("Summary PREMs score by age group", size(medium))
+				title("", size(small))
 				note("Preliminary results. Update as of: $date", size(vsmall))
 				legend(off) )
 			ytitle("Score (0-100)", size(small)) yscale(r(0 100))
@@ -522,10 +625,22 @@ putdocx text ("3.1. Clients' Age"), bold linebreak
 		;	
 		#delimit cr	
 
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .plotregion1.subtitle[2].style.editstyle fillcolor(white) editcopy
+		gr_edit .plotregion1.subtitle[2].style.editstyle linestyle(color(white)) editcopy
+		// subtitle[2] edits
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color
+		
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Summary PREMs score by age group and study arm"), bold linebreak
 putdocx image "temp.png", height(7.5) width(6)
 }
 
@@ -551,7 +666,7 @@ putdocx text ("3.2. Clients' Gender"), bold linebreak
 			over(axis)	
 			by(studyarm, 
 				col(1)
-				title("Summary PREMs score by gender", size(medium))
+				title("", size(small))
 				note("Preliminary results. Update as of: $date", size(vsmall))
 				legend(off) )
 			ytitle("Score (0-100)", size(small)) yscale(r(0 100))
@@ -561,10 +676,22 @@ putdocx text ("3.2. Clients' Gender"), bold linebreak
 		;	
 		#delimit cr	
 
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .plotregion1.subtitle[2].style.editstyle fillcolor(white) editcopy
+		gr_edit .plotregion1.subtitle[2].style.editstyle linestyle(color(white)) editcopy
+		// subtitle[2] edits
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color		
+		
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Summary PREMs score by gender and study arm"), bold linebreak
 putdocx image "temp.png", height(7.5) width(6)
 }
 
@@ -590,7 +717,7 @@ putdocx text ("3.3. Clients' Education"), bold linebreak
 			over(axis)	
 			by(studyarm, 
 				col(1)
-				title("Summary PREMs score by education", size(medium))
+				title("", size(small))
 				note("Preliminary results. Update as of: $date", size(vsmall))
 				legend(off) )
 			ytitle("Score (0-100)", size(small)) yscale(r(0 100))
@@ -600,10 +727,22 @@ putdocx text ("3.3. Clients' Education"), bold linebreak
 		;	
 		#delimit cr	
 
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .plotregion1.subtitle[2].style.editstyle fillcolor(white) editcopy
+		gr_edit .plotregion1.subtitle[2].style.editstyle linestyle(color(white)) editcopy
+		// subtitle[2] edits
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color		
+		
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Summary PREMs score by education and study arm"), bold linebreak
 putdocx image "temp.png", height(7.5) width(6)
 }
 
@@ -629,7 +768,7 @@ putdocx text ("3.4. Clients' care seeking"), bold linebreak
 			over(axis)	
 			by(studyarm, 
 				col(1)
-				title("Summary PREMs score by care-seeking group", size(medium))
+				title("", size(small))
 				note("Preliminary results. Update as of: $date", size(vsmall))
 				legend(off) )
 			ytitle("Score (0-100)", size(small)) yscale(r(0 100))
@@ -639,10 +778,22 @@ putdocx text ("3.4. Clients' care seeking"), bold linebreak
 		;	
 		#delimit cr	
 
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .plotregion1.subtitle[2].style.editstyle fillcolor(white) editcopy
+		gr_edit .plotregion1.subtitle[2].style.editstyle linestyle(color(white)) editcopy
+		// subtitle[2] edits
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color		
+		
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Summary PREMs score by care-seeking group and study arm"), bold linebreak
 putdocx image "temp.png", height(7.5) width(6)
 }
 
@@ -662,13 +813,13 @@ putdocx text ("3.5. WHO-5 wellbeing score"), bold linebreak
 			gen axis = temp4
 			
 			list grouplabel studyarm axis
-				
+			
 		#delimit;
 		graph hbar yyy_w ,
 			over(axis)	
 			by(studyarm, 
 				col(1)
-				title("Summary PREMs score by WHO-5 wellbeing score", size(medium))
+				title("", size(small))
 				note("Preliminary results. Update as of: $date", size(vsmall))
 				legend(off) )
 			ytitle("Score (0-100)", size(small)) yscale(r(0 100))
@@ -677,11 +828,23 @@ putdocx text ("3.5. WHO-5 wellbeing score"), bold linebreak
 			ysize(7.5) xsize(6)
 		;	
 		#delimit cr	
+		
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .plotregion1.subtitle[2].style.editstyle fillcolor(white) editcopy
+		gr_edit .plotregion1.subtitle[2].style.editstyle linestyle(color(white)) editcopy
+		// subtitle[2] edits
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color		
 
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Summary PREMs score by WHO-5 wellbeing score and study arm"), bold linebreak
 putdocx image "temp.png", height(7.5) width(6)
 }
 
@@ -715,7 +878,7 @@ putdocx text ("4.1. Clients' Age"), bold linebreak
 		#delimit;
 		graph hbar obs* ,
 			over(studyarm) stack	
-			title("Distribution of analysis sample, by age group", size(medium))
+			title("", size(small))
 			note("Preliminary results. Update as of: $date", size(vsmall))
 			ytitle("Number of respondents") 
 			blabel(bar, position(center))	
@@ -730,10 +893,18 @@ putdocx text ("4.1. Clients' Age"), bold linebreak
 		;	
 		#delimit cr	
 
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color		
+		
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Distribution of analysis sample, by age group and study arm"), bold linebreak
 putdocx image "temp.png", height(4) width(6)
 }
 
@@ -763,7 +934,7 @@ putdocx text ("4.2. Clients' Gender"), bold linebreak
 		#delimit;
 		graph hbar obs* ,
 			over(studyarm) stack	
-			title("Distribution of analysis sample, by gender", size(medium))
+			title("", size(small))
 			note("Preliminary results. Update as of: $date", size(vsmall))
 			ytitle("Number of respondents") 
 			blabel(bar, position(center))	
@@ -780,10 +951,18 @@ putdocx text ("4.2. Clients' Gender"), bold linebreak
 		;	
 		#delimit cr	
 
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color				
+		
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Distribution of analysis sample, by gender and study arm"), bold linebreak
 putdocx image "temp.png", height(4) width(6)
 }
 
@@ -812,7 +991,7 @@ putdocx text ("4.3. Clients' Education"), bold linebreak
 		#delimit;
 		graph hbar obs* ,
 			over(studyarm) stack	
-			title("Distribution of analysis sample, by education", size(medium))
+			title("", size(small))
 			note("Preliminary results. Update as of: $date", size(vsmall))
 			ytitle("Number of respondents") 
 			blabel(bar, position(center))	
@@ -827,10 +1006,18 @@ putdocx text ("4.3. Clients' Education"), bold linebreak
 		;	
 		#delimit cr	
 
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color				
+		
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Distribution of analysis sample, by education and study arm"), bold linebreak
 putdocx image "temp.png", height(4) width(6)
 }
 
@@ -860,7 +1047,7 @@ putdocx text ("4.4. Clients' care seeking"), bold linebreak
 		#delimit;
 		graph hbar obs* ,
 			over(studyarm) stack	
-			title("Distribution of analysis sample, by care-seeking group", size(medium))
+			title("", size(small))
 			note("Preliminary results. Update as of: $date", size(vsmall))
 			ytitle("Number of respondents") 
 			blabel(bar, position(center))	
@@ -877,10 +1064,18 @@ putdocx text ("4.4. Clients' care seeking"), bold linebreak
 		;	
 		#delimit cr	
 
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color				
+		
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Distribution of analysis sample, by care-seeking group and study arm"), bold linebreak
 putdocx image "temp.png", height(4) width(6)
 }
 
@@ -909,7 +1104,7 @@ putdocx text ("4.5. WHO-5 wellbeing score"), bold linebreak
 		#delimit;
 		graph hbar obs* ,
 			over(studyarm) stack	
-			title("Distribution of analysis sample, by WHO-5 wellbeing score", size(medium))
+			title("", size(small))
 			note("Preliminary results. Update as of: $date", size(vsmall))
 			ytitle("Number of respondents") 
 			blabel(bar, position(center))	
@@ -924,10 +1119,18 @@ putdocx text ("4.5. WHO-5 wellbeing score"), bold linebreak
 		;	
 		#delimit cr	
 
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color				
+		
 		graph save Graph "temp.gph", replace
 		graph export "temp.png", replace	
 
 putdocx paragraph
+putdocx text ("Figure: Distribution of analysis sample, by WHO-5 wellbeing score and study arm"), bold linebreak
 putdocx image "temp.png", height(4) width(6)
 }
 

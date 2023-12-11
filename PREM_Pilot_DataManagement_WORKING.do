@@ -100,7 +100,7 @@ local month 			 12 /*month of the mid point in data collection*/
 local surveyid_EN 		 221751 /*LimeSurvey survey ID for ENGLISH form*/
 local surveyid_CL 		 636743 /*LimeSurvey survey ID for COUNTRY LANGUAGE form*/
 
-local startdate 	 	 20231209 /*First date of the actual listing - in YYYYMMDD */ 
+local startdate 	 	 20231211 /*First date of the actual listing - in YYYYMMDD */ 
 
 *** Define local macro for response options specific to the country 
 
@@ -139,9 +139,13 @@ import delimited using "https://extranet.who.int/dataformv3/index.php/plugins/di
 	gen limesurveyform = "`countrylanguage1'"
 	
 	append using temp.dta, force
-		
+	
+	tab limesurveyform, m
+	
 *IF NO TEST DATA ARE ENTERED YET, IMPORT MOCK DATA CREATED BY YJ
 use "$downloadcsvdir/LimeSurvey_PREM_EXAMPLE_20231207.dta", clear /*SUPPRESS THIS WHEN WORKING WITH REAL DATA*/
+
+	bysort A004: tab A001 Q402, m
 */
 
 *****B.2. Export/save the data daily in CSV form with date 	
@@ -613,7 +617,7 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		
 	rename *, lower
 
-		capture drop target_sample_size mode language
+		capture drop target_sample_size 
 		d
 
 		/* this worksheet has background characteristics of the sentinel facilites.
@@ -631,6 +635,8 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 		district        byte    %10.0g                district
 		facility_type   byte    %10.0g                facility_type
 		managing_auth~y byte    %10.0g                managing_authority
+		mode_design     str5    %9s                   mode_design
+		language_design str7    %9s                   language_design
 		------------------------------------------------------------------------------------------
 		Sorted by: 
 
@@ -642,22 +648,22 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 	merge facilityid using temp.dta, 
 	
 		tab _merge
-		
+				
 		*****CHECK HERE: 
 		*	all should be 3 (i.e., match) by the end of the data collection*/
 		*	below is the distribution with mock data
 		*	no one from one facility has been interviewed yet
 		/*
-		
-			 _merge |      Freq.     Percent        Cum.
-		------------+-----------------------------------
-				  1 |          1        0.25        0.25
-				  3 |        399       99.75      100.00
-		------------+-----------------------------------
-			  Total |        400      100.00
+			.                 tab _merge
 
+				 _merge |      Freq.     Percent        Cum.
+			------------+-----------------------------------
+					  1 |          1        0.06        0.06
+					  3 |      1,543       99.94      100.00
+			------------+-----------------------------------
+				  Total |      1,544      100.00
 		*/
-		
+				
 		keep if _merge==3
 		
 		drop _merge*
@@ -761,9 +767,11 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 			replace mode = "FTF" if a001==2
 		
 		gen language = ""
+			*replace language = "English" if language_design=="English"
+			*replace language = "`countrylanguage1'" if language_design=="`countrylanguage1'"
 			replace language = "English" if q402==1
 			replace language = "`countrylanguage1'" if q402==2
-			
+
 	*****************************
 	* Cover + Section 3 + q100a/B
 	*****************************
@@ -1022,7 +1030,7 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
 
 		use temp.dta, clear		
-		foreach subgroupvar of varlist zcare zage zgender zedu zdepression zdistrict ztype zsector{
+		foreach subgroupvar of varlist zcare zage zgender zedu zdepression ztype zsector{
 		
 		preserve
 		collapse (count) obs (mean) x* (mean) y_* yy_* yyy_*, ///
@@ -1036,14 +1044,14 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 		}
 		
 *** By district: overall and by subgroup			
-
+	
 		use temp.dta, clear
 		collapse (count) obs (mean) x* (mean) y_* yy_* yyy_* , ///
 			by(country language mode zdistrict round month year )
 			
 			append using "$datadir/summary_PREM_`country'_R`round'.dta"	, force	
 			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
-
+				
 		use temp.dta, clear		
 		foreach subgroupvar of varlist zcare zage zgender zedu zdepression ztype zsector{
 		
@@ -1057,7 +1065,8 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
 		restore
 		}		
-	
+		
+		
 	use "$datadir/summary_PREM_`country'_R`round'.dta", clear
 		
 			*replace language = "All languages" if language=="" & mode!=""
@@ -1072,10 +1081,11 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 			replace group="Clients' Education" if zedu!=.
 			replace group="WHO-5 wellbeing score" if zdepression!=.
 			replace group="Facility type" if ztype!=.
-			replace group="Facility managing authority" if zsector!=.			
+			replace group="Facility managing authority" if zsector!=.	
+			
 			replace group="District_" + group if zdistrict!=. & group!="All" /*by subgroup within district*/
 			replace group="District" if zdistrict!=. & group=="All" 
-	
+		
 			replace grouplabel="Both patient & caregiver" 	if zcare==1
 			replace grouplabel="Only patient" 	if zcare==2
 			replace grouplabel="Only caregiver" 	if zcare==3

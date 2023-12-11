@@ -78,16 +78,7 @@ import delimited using "https://extranet.who.int/dataformv3/index.php/plugins/di
 		replace `var' = "A5" if `var'=="A2" & random<0.30
 		drop random 
 	}	
-	
-	* ASSIGN NEW DISTRICT AND FACILITY ID
-	set seed 512	
-	generate random = runiform()
-		replace A004 = 1 if random<=0.25
-		replace A004 = 2 if random>0.25 & random<=0.50
-		replace A004 = 3 if random>0.50 & random<=0.75
-		replace A004 = 4 if random>0.75
-		drop random 
-	
+		
 	* ASSIGN NEW FACILITY ID
 	set seed 443	
 	generate random = runiform()
@@ -129,6 +120,20 @@ import delimited using "https://extranet.who.int/dataformv3/index.php/plugins/di
 		*replace A005 =	433	if random>	0.928	
 		drop random 
 	
+	* REPLACE DISTRICT ACCORDING TO FACILITY ID	
+		replace A004 = 1 if A005>100 & A005<=199
+		replace A004 = 2 if A005>200 & A005<=299
+		replace A004 = 3 if A005>300 & A005<=399
+		replace A004 = 4 if A005>400 & A005<=499
+				
+	* REPLACE Q001 ACCORDING TO THE DISTRICT
+		replace A001 = "A1" if A004==1 | A004==3 /*Phone*/ 
+		replace A001 = "A2" if A004==2 | A004==4 /*FTF*/
+		
+	* REPLACE Q402 ACCORDING TO THE DISTRICT
+		replace Q402 = "A1" if A004==1 | A004==2 /*ENGLISH*/ 
+		replace Q402 = "A2" if A004==3 | A004==4 /*COUNTRY LANGUAGE*/		
+	
 	* ASSIGN NEW SAMPLE ID
 		set seed 123	
 		generate random = runiformint(0, 999)
@@ -143,4 +148,5 @@ import delimited using "https://extranet.who.int/dataformv3/index.php/plugins/di
 save "$downloadcsvdir/LimeSurvey_PREM_EXAMPLE_20231207.dta", replace
 
 d, short
+bysort A004: tab A001 Q402, m
 THE END 
