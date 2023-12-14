@@ -134,6 +134,37 @@ import delimited using "https://extranet.who.int/dataformv3/index.php/plugins/di
 		replace Q402 = "A1" if A004==1 | A004==2 /*ENGLISH*/ 
 		replace Q402 = "A2" if A004==3 | A004==4 /*COUNTRY LANGUAGE*/		
 	
+	* REPLACE A009-A011 ACCORDING TO THE DISTRICT		
+		replace A009 = . if A004==2 | A004==4 /*FTF*/	
+		replace A010 = "" if A004==2 | A004==4 /*FTF*/	
+		replace A011 = "" if A004==2 | A004==4 /*FTF*/	
+		
+	* REPLACE A011 in PHON DISTRICT 
+bysort A009: tab A011 A010 if A004==1 | A004==3, m
+
+		replace A011 = "A2" if A009==. & (A004==1 | A004==3) /*Phone*/ 	
+		
+tab A011 A004, m
+		
+	* REPLACE Q001 ACCORDING A011  
+tab A011 A004, m	
+tab Q001 A004, m	
+
+		replace Q001 ="A1" if A011=="A1" & Q002SQ001==1 & (A004==1 | A004==3) /*Phone*/ 
+		replace Q001 ="A2" if A011=="A1" & Q002SQ001!=1 & (A004==1 | A004==3) /*Phone*/ 
+		replace Q001 ="" if A011!="A1" & (A004==1 | A004==3) /*Phone*/ 
+
+tab Q001 A004, m			
+
+	* REPLACE Q403a/b ACCORDING A011 & 	
+		replace Q403a ="" if (A004==1 | A004==3) /*Phone*/ 		
+		replace Q403b ="" if (A004==2 | A004==4) /*FTF*/	
+		replace Q403b ="" if Q001!="A1" & (A004==1 | A004==3) /*Phone*/ 		
+		replace Q403a ="" if Q001!="A1" & (A004==2 | A004==4) /*FTF*/	
+
+bysort A004: tab Q001 Q403b, m			
+bysort A004: tab Q001 Q403a, m			
+		
 	* ASSIGN NEW SAMPLE ID
 		set seed 123	
 		generate random = runiformint(0, 999)

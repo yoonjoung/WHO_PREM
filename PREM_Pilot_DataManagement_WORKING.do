@@ -648,7 +648,7 @@ import excel "$chartbookdir/PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Facility_
 	merge facilityid using temp.dta, 
 	
 		tab _merge
-				
+			
 		*****CHECK HERE: 
 		*	all should be 3 (i.e., match) by the end of the data collection*/
 		*	below is the distribution with mock data
@@ -1029,10 +1029,11 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 			append using "$datadir/summary_PREM_`country'_R`round'.dta"	, force	
 			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
 
-		use temp.dta, clear		
-		foreach subgroupvar of varlist zcare zage zgender zedu zdepression ztype zsector{
+		use temp.dta, clear				
+		foreach subgroupvar of varlist zcare zage zgender zedu zdepression {
 		
 		preserve
+		drop if `subgroupvar'==.
 		collapse (count) obs (mean) x* (mean) y_* yy_* yyy_*, ///
 			by(country language mode round month year `subgroupvar')
 		
@@ -1053,9 +1054,10 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
 				
 		use temp.dta, clear		
-		foreach subgroupvar of varlist zcare zage zgender zedu zdepression ztype zsector{
+		foreach subgroupvar of varlist zcare zage zgender zedu zdepression {
 		
 		preserve
+		drop if `subgroupvar'==.
 		collapse (count) obs (mean) x* (mean) y_* yy_* yyy_*, ///
 			by(country language mode zdistrict round month year `subgroupvar')
 			
@@ -1065,7 +1067,6 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 			save "$datadir/summary_PREM_`country'_R`round'.dta", replace 
 		restore
 		}		
-		
 		
 	use "$datadir/summary_PREM_`country'_R`round'.dta", clear
 		
@@ -1080,9 +1081,7 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 			replace group="Clients' Gender" if zgender!=.
 			replace group="Clients' Education" if zedu!=.
 			replace group="WHO-5 wellbeing score" if zdepression!=.
-			replace group="Facility type" if ztype!=.
-			replace group="Facility managing authority" if zsector!=.	
-			
+					
 			replace group="District_" + group if zdistrict!=. & group!="All" /*by subgroup within district*/
 			replace group="District" if zdistrict!=. & group=="All" 
 		
@@ -1102,13 +1101,6 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 
 			replace grouplabel="WHO-5 score <=50"	if zdepression==0
 			replace grouplabel="WHO-5 score >50" 	if zdepression==1			
-
-			replace grouplabel="`type1'" if ztype==1
-			replace grouplabel="`type2'" if ztype==2
-			replace grouplabel="`type3'" if ztype==3
-		
-			replace grouplabel="`sector1'"	if zsector==1
-			replace grouplabel="`sector2'" 	if zsector==2
 
 			replace grouplabel="`geoname1'_" + grouplabel if zdistrict==1 & grouplabel!="All" /*by subgroup within district*/
 			replace grouplabel="`geoname2'_" + grouplabel if zdistrict==2 & grouplabel!="All" /*by subgroup within district*/
@@ -1273,6 +1265,10 @@ log off
 			foreach var of varlist q103 - q137 {
 				gen byte mprem`var' = `var'==.
 			}
+			
+				/* fix for Q127 which is asked only when Q126 is not never*/
+				replace mpremq127 = 0 if q126==1 
+				
 			foreach var of varlist q2* {
 				gen byte mwho5`var' = `var'==.
 			}			

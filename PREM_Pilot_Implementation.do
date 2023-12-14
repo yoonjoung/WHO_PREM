@@ -130,7 +130,7 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 		gen num_invwronum = 1 if a011==5 | a011==6		
 
 		*Number of sampled clients with no answer 
-		gen num_nocnt = 1 if a011==2 | a011==3	
+		gen num_noanswer = 1 if a011==2 | a011==3	
 		
 		*Number of sampled clients who are contacted 
 		gen num_cntsoelse = 1 if a011==4
@@ -257,7 +257,7 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 
 		*Pct distribution for contact for PHONE interviews
 		gen pct_ph_invwronum = num_invwronum / num_samp
-		gen pct_ph_nocnt = num_nocnt / num_samp
+		gen pct_ph_noanswer = num_noanswer / num_samp
 		gen pct_ph_cntsoelse = num_cntsoelse / num_samp
 		gen pct_ph_cntsuccess = num_cntsuccess / num_samp
 		
@@ -288,8 +288,8 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 	
 		#delimit; 
 		foreach var of varlist 
-			num_invwronum	num_nocnt	num_cntsoelse	num_cntsuccess
-			pct_ph_invwronum	pct_ph_nocnt	pct_ph_cntsoelse	pct_ph_cntsuccess	
+			num_invwronum	num_noanswer	num_cntsoelse	num_cntsuccess
+			pct_ph_invwronum	pct_ph_noanswer	pct_ph_cntsoelse	pct_ph_cntsuccess	
 			rate_cnt	rate_cntsuccess{
 			;
 			#delimit cr

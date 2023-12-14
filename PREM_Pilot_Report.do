@@ -38,7 +38,7 @@ numlabel, add
 **************************************************************
 
 *** Directory for this do file 
-cd "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/4_DataAnalysis/"
+global mydir "~/Dropbox/0iSquared/iSquared_WHO/PREM/Methods/4_DataAnalysis/"
 cd $mydir
 
 *** Define a directory for the chartbook (can be same or different from the main directory)
@@ -238,7 +238,7 @@ putdocx image "temp.png", height(3) width(6)
 		#delimit;		
 		graph hbar ///
 			pct_ph_cntcoop pct_ph_cntnocoop ///
-			pct_ph_cntsoelse pct_ph_nocnt pct_ph_invwronum,						
+			pct_ph_cntsoelse pct_ph_noanswer pct_ph_invwronum,						
 			stack
 			by(studyarm, 
 				col(1)
@@ -519,7 +519,7 @@ putdocx paragraph
 putdocx text ("Figure: Summary and domain-specific PREMs score, by study arm"), bold linebreak
 putdocx image "temp.png", height(7.5) width(6)
 }
-/*
+
 putdocx pagebreak	
 putdocx paragraph
 putdocx text ("2.1. Summary and domain-specific PREMs: by district"), bold linebreak
@@ -587,7 +587,7 @@ putdocx paragraph
 putdocx text ("Figure: Summary and domain-specific PREMs score, by district"), bold linebreak
 putdocx image "temp.png", height(7.5) width(6)
 }
-*/
+
 *****3. Summary and domain-specific PREMs: by background characteristics 
 putdocx pagebreak	
 putdocx paragraph
