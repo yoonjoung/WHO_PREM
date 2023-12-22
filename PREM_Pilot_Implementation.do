@@ -141,11 +141,11 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 		*Number of respondents
 		gen num_resp = 1 if q001==1 
 		
-		*Number of respondents who completed more than 50% of the interview*
-		gen num_comp50 = 1 if xcomplete==1 | (q403==3 & pq_missing>0.5)
-		
+		*Number of respondents who completed more than 50% of the interview*		
+		gen num_comp50 = 1 if q001==1 & (xcomplete==1 | (q403==3 & pq_missing>0.5 & pq_missing!=. ))
+				
 		*Number of respondents who completed the interview**
-		gen num_comp = 1 if xcomplete==1 
+		gen num_comp = 1 if q001==1 & xcomplete==1  
 		
 		*Number of phone calls made
 		gen num_call = a008	
