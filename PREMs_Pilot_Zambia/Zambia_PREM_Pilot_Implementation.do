@@ -62,10 +62,10 @@ local month 			 12 /*month of the mid point in data collection*/
 local countrylanguage1	 Bemba /*Country language 1*/
 
 /*Study district names: must match with district code in ORANGE tab*/
-local geoname1	 		 Anne Arundel 
-local geoname2	 		 Baltimore 
-local geoname3	 		 Harford
-local geoname4	 		 Somerset
+local geoname1	 		 Lusaka
+local geoname2	 		 Chilanga
+local geoname3	 		 Kapiri Mposhi
+local geoname4	 		 Mkushi
 
 /*Facility type: must match with facility_type numeric code in ORANGE tab*/
 local type1 			 District Hospital /*Facility type*/
@@ -141,11 +141,12 @@ use "$datadir/PREM_`country'_R`round'.dta", clear
 		*Number of respondents
 		gen num_resp = 1 if q001==1 
 		
-		*Number of respondents who completed more than 50% of the interview*
-		gen num_comp50 = 1 if xcomplete==1 | (q403==3 & pq_missing>0.5)
+		*Number of respondents who completed more than 50% of the interview*		
+		gen num_comp50 = 1 if q001==1 & (xcomplete==1 | (q403==3 & pq_missing>0.5 & pq_missing!=. ))
+		/*EDIT TO CORRECT q403 data entry errors. Included "q001==1"*/
 		
 		*Number of respondents who completed the interview**
-		gen num_comp = 1 if xcomplete==1 
+		gen num_comp = 1 if q001==1 & xcomplete==1 
 		
 		*Number of phone calls made
 		gen num_call = a008	

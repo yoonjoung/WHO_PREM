@@ -97,10 +97,10 @@ local year 			 	 2023 /*year of the mid point in data collection*/
 local month 			 12 /*month of the mid point in data collection*/	
 
 local surveyid_EN 		 189817 /*LimeSurvey survey ID for ENGLISH form*/
-*local surveyid_CL 		 636743 /*LimeSurvey survey ID for COUNTRY LANGUAGE form*/
+local surveyid_CL 		 469495 /*LimeSurvey survey ID for BEMBA form*/
 
-local startdate 	 	 20231211 /*First date of the actual listing - in YYYYMMDD */ 
-*local startdatetime      2023-12-07 14:30:00 /*Time when the actual listing started - SEE BELOW */ 
+local startdate 	 	 20231216 /*First date of the actual listing - in YYYYMMDD */ 
+
 *** Define local macro for response options specific to the country 
 
 local countrylanguage1	 Bemba /*Country language 1*/
@@ -127,30 +127,41 @@ global date		= subinstr("`c_today'", " ", "",.)
 
 *****B.1. Import raw data from LimeSurvey 
 import delimited using "https://extranet.who.int/dataformv3/index.php/plugins/direct?plugin=CountryOverview&docType=1&sid=`surveyid_EN'&language=en&function=createExport", case(preserve) clear
+export delimited using "$downloadcsvdir/LimeSurvey_PREM_`country'_R`round'_ENGLISH_$date.csv", replace
 
-/*
 	d, short	
+	d Q001 Q4*
+	tab Q001 Q401, m
 	gen limesurveyform = "English"	
 	save temp.dta, replace
 
 import delimited using "https://extranet.who.int/dataformv3/index.php/plugins/direct?plugin=CountryOverview&docType=1&sid=`surveyid_CL'&language=en&function=createExport", case(preserve) clear
+export delimited using "$downloadcsvdir/LimeSurvey_PREM_`country'_R`round'_BEMBA_$date.csv", replace
 	
 	d, short
+	d Q001 Q4*	
+	tab Q001 Q401, m
 	gen limesurveyform = "`countrylanguage1'"
 	
-	append using temp.dta, force
+		/* ZAMBIA SPECIFIC EDIT STARTS*/ 
+		*change format if Q001
+		foreach var of varlist Q001 Q401 {	
+			replace `var' = usubinstr(`var', "A", "", 1) 
+			destring `var', replace 
+			recode `var' 2=0 
+			}
+		/* EDIT ENDS*/ 	
+			
+	append using temp.dta, 
 	
-	tab limesurveyform, m
-	
-*IF NO TEST DATA ARE ENTERED YET, IMPORT MOCK DATA CREATED BY YJ
-use "$downloadcsvdir/LimeSurvey_PREM_EXAMPLE_20231207.dta", clear /*SUPPRESS THIS WHEN WORKING WITH REAL DATA*/
-
-	bysort A004: tab A001 Q402, m
-*/
+		tab limesurveyform, m
+		tab limesurveyform Q001, m
+		tab limesurveyform Q401, m	
 
 *****B.2. Export/save the data daily in CSV form with date 	
 
-export delimited using "$downloadcsvdir/LimeSurvey_PREM_`country'_R`round'_$date.csv", replace
+* export delimited using "$downloadcsvdir/LimeSurvey_PREM_`country'_R`round'_$date.csv", replace
+* See above, now we export dataset by language 12/18/2023
 
 *****B.3. Export the data to chartbook  	
 
@@ -255,36 +266,6 @@ export excel using "$chartbookdir/Zambia_PREM_Pilot_Chartbook_WORKING.xlsx", she
 
 		drop duplicate submitdatelatest
 
-*****B.5. Fix district code and facility ID for mock data (12/14/2023) 
-* Suppress this subsection once practice data entry is over 
-
-	* ASSIGN NEW FACILITY ID
-	set seed 443	
-	generate random = runiform()
-		replace A005 =	1101	if random<=	0.0625
-		replace A005 =	1202	if random>	0.0625	& random<=	0.1250
-		replace A005 =	1203	if random>	0.1250	& random<=	0.1875
-		replace A005 =	1304	if random>	0.1875	& random<=	0.2500
-		replace A005 =	2101	if random>	0.2500	& random<=	0.3125
-		replace A005 =	2202	if random>	0.3125	& random<=	0.3750
-		replace A005 =	2203	if random>	0.3750	& random<=	0.4375
-		replace A005 =	2304	if random>	0.4375	& random<=	0.5000
-		replace A005 =	3101	if random>	0.5000	& random<=	0.5625
-		replace A005 =	3202	if random>	0.5625	& random<=	0.6250
-		replace A005 =	3203	if random>	0.6250	& random<=	0.6875
-		replace A005 =	3304	if random>	0.6875	& random<=	0.7500
-		replace A005 =	4101	if random>	0.7500	& random<=	0.8125
-		replace A005 =	4202	if random>	0.8125	& random<=	0.8750
-		replace A005 =	4203	if random>	0.8750	& random<=	0.9375
-		replace A005 =	4304	if random>	0.9375	& random<=	1.0000
-		drop random 
-		
-	* REPLACE DISTRICT ACCORDING TO FACILITY ID	
-		replace A004 = 1 if A005>100 & A005<=199
-		replace A004 = 2 if A005>200 & A005<=299
-		replace A004 = 3 if A005>300 & A005<=399
-		replace A004 = 4 if A005>400 & A005<=499
-*/		
 **************************************************************
 * C. Data cleaning - variables 
 **************************************************************
@@ -343,15 +324,13 @@ export excel using "$chartbookdir/Zambia_PREM_Pilot_Chartbook_WORKING.xlsx", she
 	* Section 0
 	*****************************
 	sum q0*
-	
 	/*
 	foreach var of varlist q001 {	
 		replace `var' = usubinstr(`var', "A", "", 1) 
 		destring `var', replace 
 		}
-
-	sum q001		
 	*/
+	sum q001		
 	
 	*****************************
 	* Section 1
@@ -395,8 +374,7 @@ export excel using "$chartbookdir/Zambia_PREM_Pilot_Chartbook_WORKING.xlsx", she
 	* Section 4
 	*****************************
 	sum q4*
-		
-	*foreach var of varlist q4*  {	
+
 	foreach var of varlist q402 q403a q403  {	
 		replace `var' = usubinstr(`var', "A", "", 1) 
 		destring `var', replace 
@@ -736,25 +714,12 @@ import excel "$chartbookdir/Zambia_PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Fa
 **************************************************************
 * D.A Expand and scramble the mock data <= DELETE THIS SECTION WHEN WORKING WITH REAL DATA
 **************************************************************
-/*
-	expand 50 
-	
-	* SCRAMBLE
-	set seed 410	
-	foreach var of varlist q1* q2* q302 q303{
-	generate random = runiform()
-		recode `var' (1=2) (4=3) if random>0.80
-		recode `var' (2=1) (4=3) if random<0.20
-		drop random 
-	}
-	
-*/	
 
 **************************************************************
 * E. Create analytical variables 
 **************************************************************
 
-/*
+*
 ***** E.0 Drop data that were entered for practice and test <= ACTIVATE THIS SECTION WHEN WORKING WITH REAL DATA
 
 	codebook a002
@@ -763,10 +728,11 @@ import excel "$chartbookdir/Zambia_PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Fa
 	format interviewdate  %td
 	
 		tab interviewdate, m
+		
 	drop if interviewdate < date("`startdate'","YMD") 
 		tab interviewdate, m
 		
-*/
+*
 
 *****E.1. Construct analysis variables 
 
@@ -804,10 +770,10 @@ import excel "$chartbookdir/Zambia_PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Fa
 			replace mode = "FTF" if a001==2
 		*/
 		gen language = ""
-			*replace language = "English" if language_design=="English"
-			*replace language = "`countrylanguage1'" if language_design=="`countrylanguage1'"
-			replace language = "English" if q402==1
-			replace language = "`countrylanguage1'" if q402==2
+			replace language = "English" if language_design=="English"
+			replace language = "`countrylanguage1'" if language_design=="`countrylanguage1'"
+			*replace language = "English" if q402==1
+			*replace language = "`countrylanguage1'" if q402==2
 
 	*****************************
 	* Cover + Section 3 + q100a/B
@@ -1015,7 +981,20 @@ import excel "$chartbookdir/Zambia_PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Fa
 	*****************************
 
 		gen xcomplete=q403==1
-		
+	
+			tab xcomplete language, m
+			/*
+				.         tab xcomplete language, m
+
+					   |       language
+			 xcomplete |     Bemba    English |     Total
+			-----------+----------------------+----------
+					 0 |        92        136 |       228 
+					 1 |       238        232 |       470 
+			-----------+----------------------+----------
+				 Total |       330        368 |       698 
+			*/
+	
 		tab q403 zdistrict, m
 		bysort zdistrict: tab mode language, m
 	
