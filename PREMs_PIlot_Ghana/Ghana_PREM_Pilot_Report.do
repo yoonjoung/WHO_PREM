@@ -65,6 +65,7 @@ local today=c(current_date)
 local c_today= "`today'"
 global date=subinstr("`c_today'", " ", "",.)
 
+local currenttime=c(current_time)
 **************************************************************
 * B. Run the implementation do file, which includes data management do file 
 **************************************************************
@@ -93,8 +94,26 @@ capture putdocx clear
 putdocx begin
 putdocx paragraph
 putdocx text ("PREMs pilot in `country': Implementation progress summary"), bold linebreak
-putdocx text ("(last updated on `today')"),  linebreak	
-putdocx text (" "), linebreak
+putdocx text ("(last updated on `today' `currenttime')"),  linebreak	
+putdocx text (""),  
+
+			sum num_comp if grouplabel=="English_FTF_All"
+			return list 
+putdocx text ("FTF: Total number interviewed in English: `r(mean)'"), linebreak
+
+			sum num_comp if grouplabel=="`countrylanguage1'_FTF_All"
+			return list 
+putdocx text ("FTF: Total number interviewed in `countrylanguage1': `r(mean)'"), linebreak
+
+			sum num_comp if grouplabel=="English_Phone_All"
+			return list 					
+putdocx text ("Phone: Total number interviewed in English: `r(mean)'"), linebreak
+
+			sum num_comp if grouplabel=="`countrylanguage1'_Phone_All"
+			return list 
+putdocx text ("Phone: Total number interviewed in `countrylanguage1': `r(mean)'"), linebreak
+
+putdocx paragraph	
 putdocx text ("1. Number of who were sampled, were contacted, gave consent, and responded"), bold linebreak
 {
 preserve
@@ -107,7 +126,7 @@ preserve
 			by(studyarm, 
 				row(1)
 				title("", size(small))				
-				note("Update as of: $date", size(vsmall)) )
+				note("Preliminary results for internal review. Update as of: $date", size(vsmall)) )
 			ytitle("Number") 
 			legend( 
 				pos(6) size(vsmall) stack row(1)
@@ -162,7 +181,7 @@ preserve
 			by(studyarm, 
 				row(1)
 				title("", size(small))
-				note("Update as of: $date", size(vsmall)) )
+				note("Preliminary results for internal review. Update as of: $date", size(vsmall)) )
 			ytitle("Response rate (%)") ylabel(0 (20) 100)
 			legend( 
 				pos(6) size(vsmall) row(1)
@@ -201,7 +220,7 @@ putdocx image "temp.png", height(3) width(6)
 			by(studyarm, 
 				row(1)
 				title("", size(small))
-				note("Update as of: $date", size(vsmall)) )
+				note("Preliminary results for internal review. Update as of: $date", size(vsmall)) )
 			ytitle("Response rate (%)") ylabel(0 (20) 100)
 			legend( 
 				pos(6) size(vsmall) row(1)
@@ -243,7 +262,7 @@ putdocx image "temp.png", height(3) width(6)
 			by(studyarm, 
 				col(1)
 				title("", size(small))
-				note("Update as of: $date", size(vsmall)) )
+				note("Preliminary results for internal review. Update as of: $date", size(vsmall)) )
 			ytitle("(%)") ylabel(0 (20) 100)
 			legend( 
 				pos(6) size(vsmall) row(1) stack
@@ -253,11 +272,12 @@ putdocx image "temp.png", height(3) width(6)
 				label(4 "No answer" "after 3 calls")
 				label(5 "Invalid/wrong number")
 				)
-			bar(1, color(cranberry*0.5)) 	
-			bar(2, color(cranberry*0.7)) 	
-			bar(3, color(green*0.4)) 	
-			bar(4, color(green*0.6)) 	
-			bar(5, color(green*0.8)) 	
+			blabel(bar, position(center))	
+			bar(1, color(green*0.7)) 	
+			bar(2, color(green*0.5)) 	
+			bar(3, color(cranberry*0.4)) 	
+			bar(4, color(cranberry*0.6)) 	
+			bar(5, color(cranberry*0.8)) 
 			ysize(3) xsize(6)
 		;	
 		#delimit cr	
@@ -312,7 +332,7 @@ preserve
 		#delimit;
 		graph twoway line num_compcum* date , 
 			title("")
-			note("Update as of: $date", size(vsmall)) 
+			note("Preliminary results for internal review. Update as of: $date", size(vsmall)) 
 			ytitle("Cumulative number") 		
 			yline(150)
 			legend( 
@@ -339,11 +359,12 @@ preserve
 putdocx paragraph
 putdocx text ("Figure: Cumulative number of completed interviews over time, by study arm"), bold linebreak
 putdocx image "temp.png", height(3) width(6)		
+
 			
 		#delimit;
 		graph twoway line num_callcumPhone* date , 
 			title("")
-			note("Update as of: $date", size(vsmall)) 
+			note("Preliminary results for internal review. Update as of: $date", size(vsmall)) 
 			ytitle("Cumulative number") 		
 			legend( 
 				pos(3) size(vsmall) stack col(1)
@@ -371,6 +392,79 @@ putdocx image "temp.png", height(3) width(6)
 restore 
 }
 
+*****4. Completed interviews by call attempt number
+putdocx pagebreak	
+putdocx paragraph
+putdocx text ("4. Distribution of completed interviews by the number of call attempt"), bold linebreak
+
+{
+use "$datadir/PREM_`country'_R`round'.dta", clear /*First PURPLE tab*/
+		tab mode xcomplete, m
+
+	keep if mode=="Phone" & xcomplete==1
+	
+	*sum the number of completed interviews by call number - a008
+	collapse (sum) xcomplete , by(language a008) 
+		
+		* take care of missing
+			replace a008 =99 if a008==. 
+		* convert to percenta
+			egen temp = sum(xcomplete), by(language) 
+			replace xcomplete = round(100*xcomplete/temp, 1)
+			drop temp
+		* rename for legend 
+			rename xcomplete call_attemp_ 
+		
+	*reshape to viz	
+	reshape wide call_attemp_, i(language) j(a008)	
+
+		#delimit;		
+		graph hbar call_attemp_* ,						
+			stack
+			by(language, 
+				col(1)
+				title("", size(small))
+				note("Preliminary results for internal review. Update  as of: $date"
+					 "Note 1: 99 = missing"
+					 "Note 2: call attempt number greater than 6 is likely a data entry error" 
+					 "Note 3: rounded to integer and sum may exceed 100%", 
+					 size(vsmall)) )
+			ytitle("(%)") ylabel(0 (20) 100)
+			legend( 
+				pos(6) size(vsmall) row(1) stack
+				)
+			blabel(bar, pos(center))	
+			bar(1, color(green*0.4)) 	
+			bar(2, color(green*0.6)) 	
+			bar(3, color(green*0.8)) 	
+			bar(4, color(cranberry*0.4)) 	
+			bar(5, color(cranberry*0.6)) 	
+			bar(6, color(cranberry*0.8)) 	
+			bar(7, color(cranberry*1.0)) 	
+			bar(8, color(cranberry*1.2)) 			
+			ysize(3) xsize(6)
+		;	
+		#delimit cr	
+			
+		gr_edit .style.editstyle boxstyle(shadestyle(color(white))) editcopy
+		gr_edit .style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// Graph color
+
+		gr_edit .plotregion1.subtitle[2].style.editstyle fillcolor(white) editcopy
+		gr_edit .plotregion1.subtitle[2].style.editstyle linestyle(color(white)) editcopy
+		// subtitle[2] edits
+
+		gr_edit .legend.style.editstyle boxstyle(linestyle(color(white))) editcopy
+		// legend color
+		
+		graph save Graph "temp.gph", replace
+		graph export "temp.png", replace	
+
+putdocx paragraph
+putdocx text ("Figure: Among completed phone interviews, percent distribution by the number of attempted call to contact the respondent"), bold linebreak
+putdocx image "temp.png", height(3) width(6)		
+}
+
 *****Save the note	
 putdocx save "$datanotedir/Report_PREMs_Pilot_Implementation_`country'_$date.docx", replace		
 
@@ -388,7 +482,7 @@ capture putdocx clear
 putdocx begin
 putdocx paragraph
 putdocx text ("PREMs pilot in `country': PRELIMINARY results"), bold linebreak
-putdocx text ("(last updated on `today')"),  linebreak	
+putdocx text ("(last updated on `today' `currenttime')"),  linebreak	
 putdocx text (" "), linebreak
 putdocx text ("1. Summary and domain-specific PREMs: overall"), bold linebreak
 {
@@ -403,7 +497,7 @@ putdocx text ("1. Summary and domain-specific PREMs: overall"), bold linebreak
 			by(grouplabel, 
 				row(1)
 				title("", size(small))
-				note("Preliminary results. Update as of: $date", size(vsmall))
+				note("Preliminary results for internal review. Update as of: $date", size(vsmall))
 				legend(pos(3)) )
 			ytitle("Score (0-100)", size(small)) yscale(r(0 100)) 
 			legend( 
@@ -470,7 +564,7 @@ putdocx text ("2. Summary and domain-specific PREMs: by study arm"), bold linebr
 			by(grouplabel, 
 				col(1)
 				title("", size(small))
-				note("Preliminary results. Update as of: $date", size(vsmall))
+				note("Preliminary results for internal review. Update as of: $date", size(vsmall))
 				legend(pos(3)) )
 			ytitle("Score (0-100)", size(small)) yscale(r(0 100)) 
 			legend( 
@@ -538,7 +632,7 @@ putdocx text ("2.1. Summary and domain-specific PREMs: by district"), bold lineb
 			by(grouplabel, 
 				col(1)
 				title("", size(small))
-				note("Preliminary results. Update as of: $date", size(vsmall))
+				note("Preliminary results for internal review. Update as of: $date", size(vsmall))
 				legend(pos(3)) )
 			ytitle("Score (0-100)", size(small)) yscale(r(0 100)) 
 			legend( 
@@ -616,7 +710,7 @@ putdocx text ("3.1. Clients' Age"), bold linebreak
 			by(studyarm, 
 				col(1)
 				title("", size(small))
-				note("Preliminary results. Update as of: $date", size(vsmall))
+				note("Preliminary results for internal review. Update as of: $date", size(vsmall))
 				legend(off) )
 			ytitle("Score (0-100)", size(small)) yscale(r(0 100))
 			blabel(bar)	
@@ -667,7 +761,7 @@ putdocx text ("3.2. Clients' Gender"), bold linebreak
 			by(studyarm, 
 				col(1)
 				title("", size(small))
-				note("Preliminary results. Update as of: $date", size(vsmall))
+				note("Preliminary results for internal review. Update as of: $date", size(vsmall))
 				legend(off) )
 			ytitle("Score (0-100)", size(small)) yscale(r(0 100))
 			blabel(bar)	
@@ -718,7 +812,7 @@ putdocx text ("3.3. Clients' Education"), bold linebreak
 			by(studyarm, 
 				col(1)
 				title("", size(small))
-				note("Preliminary results. Update as of: $date", size(vsmall))
+				note("Preliminary results for internal review. Update as of: $date", size(vsmall))
 				legend(off) )
 			ytitle("Score (0-100)", size(small)) yscale(r(0 100))
 			blabel(bar)	
@@ -769,7 +863,7 @@ putdocx text ("3.4. Clients' care seeking"), bold linebreak
 			by(studyarm, 
 				col(1)
 				title("", size(small))
-				note("Preliminary results. Update as of: $date", size(vsmall))
+				note("Preliminary results for internal review. Update as of: $date", size(vsmall))
 				legend(off) )
 			ytitle("Score (0-100)", size(small)) yscale(r(0 100))
 			blabel(bar)	
@@ -820,7 +914,7 @@ putdocx text ("3.5. WHO-5 wellbeing score"), bold linebreak
 			by(studyarm, 
 				col(1)
 				title("", size(small))
-				note("Preliminary results. Update as of: $date", size(vsmall))
+				note("Preliminary results for internal review. Update as of: $date", size(vsmall))
 				legend(off) )
 			ytitle("Score (0-100)", size(small)) yscale(r(0 100))
 			blabel(bar)	
@@ -879,7 +973,7 @@ putdocx text ("4.1. Clients' Age"), bold linebreak
 		graph hbar obs* ,
 			over(studyarm) stack	
 			title("", size(small))
-			note("Preliminary results. Update as of: $date", size(vsmall))
+			note("Preliminary results for internal review. Update as of: $date", size(vsmall))
 			ytitle("Number of respondents") 
 			blabel(bar, position(center))	
 			legend( 
@@ -935,7 +1029,7 @@ putdocx text ("4.2. Clients' Gender"), bold linebreak
 		graph hbar obs* ,
 			over(studyarm) stack	
 			title("", size(small))
-			note("Preliminary results. Update as of: $date", size(vsmall))
+			note("Preliminary results for internal review. Update as of: $date", size(vsmall))
 			ytitle("Number of respondents") 
 			blabel(bar, position(center))	
 			legend( 
@@ -992,7 +1086,7 @@ putdocx text ("4.3. Clients' Education"), bold linebreak
 		graph hbar obs* ,
 			over(studyarm) stack	
 			title("", size(small))
-			note("Preliminary results. Update as of: $date", size(vsmall))
+			note("Preliminary results for internal review. Update as of: $date", size(vsmall))
 			ytitle("Number of respondents") 
 			blabel(bar, position(center))	
 			legend( 
@@ -1048,7 +1142,7 @@ putdocx text ("4.4. Clients' care seeking"), bold linebreak
 		graph hbar obs* ,
 			over(studyarm) stack	
 			title("", size(small))
-			note("Preliminary results. Update as of: $date", size(vsmall))
+			note("Preliminary results for internal review. Update as of: $date", size(vsmall))
 			ytitle("Number of respondents") 
 			blabel(bar, position(center))	
 			legend( 
@@ -1105,7 +1199,7 @@ putdocx text ("4.5. WHO-5 wellbeing score"), bold linebreak
 		graph hbar obs* ,
 			over(studyarm) stack	
 			title("", size(small))
-			note("Preliminary results. Update as of: $date", size(vsmall))
+			note("Preliminary results for internal review. Update as of: $date", size(vsmall))
 			ytitle("Number of respondents") 
 			blabel(bar, position(center))	
 			legend( 

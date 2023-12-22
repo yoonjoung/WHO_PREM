@@ -128,30 +128,55 @@ global date		= subinstr("`c_today'", " ", "",.)
 
 *****B.1. Import raw data from LimeSurvey 
 import delimited using "https://extranet.who.int/dataformv3/index.php/plugins/direct?plugin=CountryOverview&docType=1&sid=`surveyid_EN'&language=en&function=createExport", case(preserve) clear
+export delimited using "$downloadcsvdir/LimeSurvey_PREM_`country'_R`round'_ENGLISH_$date.csv", replace
 	
 	d, short	
+	d Q001 Q4*
+	tab Q001 Q401, m
 	gen limesurveyform = "English"	
 	save temp.dta, replace
 
 import delimited using "https://extranet.who.int/dataformv3/index.php/plugins/direct?plugin=CountryOverview&docType=1&sid=`surveyid_CL'&language=en&function=createExport", case(preserve) clear
-	
+export delimited using "$downloadcsvdir/LimeSurvey_PREM_`country'_R`round'_`countrylanguage1'_$date.csv", replace
+		
+		
 	d, short
+	d Q001 Q4*	
+	tab Q001 Q401, m
 	gen limesurveyform = "`countrylanguage1'"
 	
-	append using temp.dta, force
+		/* Ghana SPECIFIC EDIT STARTS*/ 		
+		foreach var of varlist Q001 Q401 {	
+			replace `var' = usubinstr(`var', "A", "", 1) 
+			destring `var', replace 
+			recode `var' 2=0 
+			}
+		/* EDIT ENDS*/ 	
+			
+	append using temp.dta, 
 	
-	tab submitdate limesurveyform, m
-	tab Q002SQ001comment limesurveyform, m
-	
-/*IF NO TEST DATA ARE ENTERED YET, IMPORT MOCK DATA CREATED BY YJ
-use "$downloadcsvdir/LimeSurvey_PREM_EXAMPLE_20231207.dta", clear /*SUPPRESS THIS WHEN WORKING WITH REAL DATA*/
+		tab limesurveyform, m
+		tab limesurveyform Q001, m
+		tab A001 limesurveyform, m
 
-	bysort A004: tab A001 Q402, m
-*/
+		/*
+		.                 tab A001 limesurveyform, m
+
+				   |    limesurveyform
+			  A001 |   English        Twi |     Total
+		-----------+----------------------+----------
+				A1 |        21         41 |        62 
+				A2 |       188        192 |       380 
+		-----------+----------------------+----------
+			 Total |       209        233 |       442 
+
+
+		*/
 
 *****B.2. Export/save the data daily in CSV form with date 	
 
-export delimited using "$downloadcsvdir/LimeSurvey_PREM_`country'_R`round'_$date.csv", replace
+*export delimited using "$downloadcsvdir/LimeSurvey_PREM_`country'_R`round'_$date.csv", replace
+* NOT exported by language as above
 
 *****B.3. Export the data to chartbook  	
 
@@ -255,7 +280,19 @@ export excel using "$chartbookdir/Ghana_PREM_Pilot_Chartbook_WORKING.xlsx", shee
 		*	Now there should be no duplicate, yay!!   
 
 		drop duplicate submitdatelatest
-		
+
+	/*
+	. tab A001 limesurveyform, m
+
+			   |    limesurveyform
+		  A001 |   English        Twi |     Total
+	-----------+----------------------+----------
+			A1 |         4          4 |         8 
+			A2 |       174        185 |       359 
+	-----------+----------------------+----------
+		 Total |       178        189 |       367 
+
+	*/ 
 **************************************************************
 * C. Data cleaning - variables 
 **************************************************************
@@ -312,11 +349,6 @@ export excel using "$chartbookdir/Ghana_PREM_Pilot_Chartbook_WORKING.xlsx", shee
 	* Section 0
 	*****************************
 	sum q0*
-	
-	foreach var of varlist q001 {	
-		replace `var' = usubinstr(`var', "A", "", 1) 
-		destring `var', replace 
-		}
 
 	sum q001		
 	
@@ -363,7 +395,7 @@ export excel using "$chartbookdir/Ghana_PREM_Pilot_Chartbook_WORKING.xlsx", shee
 	*****************************
 	sum q4*
 		
-	foreach var of varlist q4*  {	
+	foreach var of varlist q402 q403*  {	
 		replace `var' = usubinstr(`var', "A", "", 1) 
 		destring `var', replace 
 		}		
@@ -648,24 +680,65 @@ import excel "$chartbookdir/Ghana_PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Fac
 	sort facilityid	
 	merge facilityid using temp.dta, 
 	
-		tab _merge
-			
+		tab _merge, m
+		
 		*****CHECK HERE: 
 		*	all should be 3 (i.e., match) by the end of the data collection*/
 		*	below is the distribution with mock data
 		*	no one from one facility has been interviewed yet
 		/*
-			.                 tab _merge
+		
+		bysort a001: tab q403 _merge, m
+		bysort a001: list a002 a004 facilityid samplenumber if _merge==2
 
-				 _merge |      Freq.     Percent        Cum.
-			------------+-----------------------------------
-					  1 |          1        0.06        0.06
-					  3 |      1,543       99.94      100.00
-			------------+-----------------------------------
-				  Total |      1,544      100.00
+		-> a001 = 1.Phone
+
+			 +--------------------------------------------------+
+			 |                a002   a004   facili~d   sample~r |
+			 |--------------------------------------------------|
+		  1. | 2023-12-07 00:00:00      9       9999         99 |
+		  2. | 2023-12-12 00:00:00      1          1          1 |
+		  3. | 2023-12-07 00:00:00      1          9       9991 |
+		  4. | 2023-12-12 00:00:00      4          5          3 |
+		  5. | 2023-12-07 00:00:00      9       9999        999 |
+			 |--------------------------------------------------|
+		  6. | 2023-12-07 00:00:00      9       9999        991 |
+		  7. | 2023-12-07 00:00:00      9        999          9 |
+		  8. | 2023-12-12 00:00:00      4          2          8 |
+			 +--------------------------------------------------+
+
+		-----------------------------------------------------------------------------------------
+		-> a001 = 2.Face-to-face
+
+			 +--------------------------------------------------+
+			 |                a002   a004   facili~d   sample~r |
+			 |--------------------------------------------------|
+		 10. | 2023-12-13 15:14:40      3          2          2 |
+		 24. | 2023-12-13 00:00:00      2          1         51 |
+		 49. | 2023-12-13 16:25:40      3          2          8 |
+		 55. | 2023-12-07 00:00:00      9       9999          9 |
+		 89. | 2023-12-13 16:54:41      3          2         14 |
+			 |--------------------------------------------------|
+		102. | 2023-12-13 00:00:00      2          1          8 |
+		135. | 2023-12-13 16:14:55      3          2          6 |
+		189. | 2023-12-13 14:38:20      3          2          1 |
+		210. | 2023-12-13 15:38:23      3          2          3 |
+		232. | 2023-12-07 00:00:00   9999         99          9 |
+			 |--------------------------------------------------|
+		282. | 2023-12-13 16:46:42      3          2         12 |
+		299. | 2023-12-15 10:49:43      3       2302          4 |
+		301. | 2023-12-13 16:02:34      3          2          5 |
+		314. | 2023-12-13 16:37:34      3          2         10 |
+		352. | 2023-12-13 15:50:52      3          2          4 |
+			 +--------------------------------------------------+
+
+		-----------------------------------------------------------------------------------------
+		-> a001 = .
+
+
 		*/
 				
-		*keep if _merge==3
+		keep if _merge==3
 		
 		drop _merge*
 		
@@ -707,18 +780,20 @@ import excel "$chartbookdir/Ghana_PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Fac
 * E. Create analytical variables 
 **************************************************************
 
-/*
+*
 ***** E.0 Drop data that were entered for practice and test <= ACTIVATE THIS SECTION WHEN WORKING WITH REAL DATA
 
 	codebook a002
-	gen double interviewdate 	= dofc(clock(a002, "YMD hms")) 
-	*gen listingdate = dofc(submitdate) 
+	gen double interviewdate 	= dofc(clock(a002, "YMD hms")) 	
 	format interviewdate  %td
 	
 		tab interviewdate, m
-	drop if interviewdate < date("`startdate'","YMD") 
-		tab interviewdate, m
 		
+	list interviewdate q403* q002sq001comment if interviewdate < date("`startdate'","YMD") 
+	/*CHECK THESE ARE INDEED TEST DATA*/
+		
+	drop if interviewdate < date("`startdate'","YMD") 
+		tab interviewdate, m		
 */
 
 *****E.1. Construct analysis variables 
@@ -755,10 +830,10 @@ import excel "$chartbookdir/Ghana_PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Fac
 			replace mode = "FTF" if a001==2
 		
 		gen language = ""
-			*replace language = "English" if language_design=="English"
-			*replace language = "`countrylanguage1'" if language_design=="`countrylanguage1'"
-			replace language = "English" if q402==1
-			replace language = "`countrylanguage1'" if q402==2
+			replace language = "English" if language_design=="English"
+			replace language = "`countrylanguage1'" if language_design=="`countrylanguage1'"
+			*replace language = "English" if q402==1
+			*replace language = "`countrylanguage1'" if q402==2
 
 	*****************************
 	* Cover + Section 3 + q100a/B
