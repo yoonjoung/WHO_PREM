@@ -410,14 +410,14 @@ use "$datadir/PREM_`country'_R`round'.dta", clear /*First PURPLE tab*/
 			replace a008 =99 if a008==. 
 		* convert to percenta
 			egen temp = sum(xcomplete), by(language) 
-			replace xcomplete = round(100*xcomplete/temp, 1)
+			replace xcomplete = round(100*xcomplete/temp, 0.1)
 			drop temp
 		* rename for legend 
 			rename xcomplete call_attemp_ 
 		
 	*reshape to viz	
 	reshape wide call_attemp_, i(language) j(a008)	
-
+	
 		#delimit;		
 		graph hbar call_attemp_* ,						
 			stack
@@ -426,22 +426,34 @@ use "$datadir/PREM_`country'_R`round'.dta", clear /*First PURPLE tab*/
 				title("", size(small))
 				note("Preliminary results for internal review. Update  as of: $date"
 					 "Note 1: 99 = missing"
-					 "Note 2: call attempt number greater than 6 is likely a data entry error" 
-					 "Note 3: rounded to integer and sum may exceed 100%", 
+					 "Note 2: call attempt number greater than 6 is likely a data entry error?" 
+					 "Note 3: rounded to integer and the sum may not be 100%.", 
 					 size(vsmall)) )
 			ytitle("(%)") ylabel(0 (20) 100)
 			legend( 
 				pos(6) size(vsmall) row(1) stack
-				)
+				label(1 "1")
+				label(2 "2")
+				label(3 "3")
+				label(4 "4")
+				label(5 "5")
+				label(6 "6 calls")
+				)							
 			blabel(bar, pos(center))	
-			bar(1, color(green*0.4)) 	
-			bar(2, color(green*0.6)) 	
-			bar(3, color(green*0.8)) 	
-			bar(4, color(cranberry*0.4)) 	
-			bar(5, color(cranberry*0.6)) 	
-			bar(6, color(cranberry*0.8)) 	
+			bar(1, color(green*0.2)) 	
+			bar(2, color(green*0.4)) 	
+			bar(3, color(green*0.6)) 	
+			bar(4, color(cranberry*0.2)) 	
+			bar(5, color(cranberry*0.4)) 	
+			bar(6, color(cranberry*0.6)) 	
 			bar(7, color(cranberry*1.0)) 	
-			bar(8, color(cranberry*1.2)) 			
+			bar(8, color(cranberry*1.1)) 			
+			bar(9, color(cranberry*1.2)) 			
+			bar(10, color(cranberry*1.3)) 			
+			bar(11, color(cranberry*1.4)) 			
+			bar(12, color(cranberry*1.5)) 			
+			bar(13, color(cranberry*1.6)) 			
+			bar(14, color(cranberry*1.7)) 			
 			ysize(3) xsize(6)
 		;	
 		#delimit cr	

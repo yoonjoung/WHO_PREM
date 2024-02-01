@@ -160,23 +160,23 @@ export delimited using "$downloadcsvdir/LimeSurvey_PREM_`country'_R`round'_`coun
 		tab A001 limesurveyform, m
 
 		/*
+		1/10/2024
 		.                 tab A001 limesurveyform, m
 
 				   |    limesurveyform
 			  A001 |   English        Twi |     Total
 		-----------+----------------------+----------
-				A1 |        21         41 |        62 
+				A1 |       414        264 |       678 
 				A2 |       188        192 |       380 
 		-----------+----------------------+----------
-			 Total |       209        233 |       442 
-
+			 Total |       602        456 |     1,058 
 
 		*/
 
 *****B.2. Export/save the data daily in CSV form with date 	
 
 *export delimited using "$downloadcsvdir/LimeSurvey_PREM_`country'_R`round'_$date.csv", replace
-* NOT exported by language as above
+* NOT exported, since it was done by language as above
 
 *****B.3. Export the data to chartbook  	
 
@@ -198,6 +198,10 @@ export excel using "$chartbookdir/Ghana_PREM_Pilot_Chartbook_WORKING.xlsx", shee
 	check against limesurvey. see how it will be structured...
 	*/
 		
+*****B.3.A DATA EDIT 
+
+do Ghana_PREM_Pilot_DataEdit.do /*Added on 1/24/2024*/
+		
 *****B.4. Drop duplicate cases 
 
 	* B.4.1 check variables with "id" in their names
@@ -215,7 +219,7 @@ export excel using "$chartbookdir/Ghana_PREM_Pilot_Chartbook_WORKING.xlsx", shee
 		d, short	
 		gen allmissing = nvarmiss==`r(k)'
 		*****CHECK HERE: 
-		tab allmissing, m
+		tab allmissing, m		
 		*	there should be 0, but
 		*	drop if any rows that are completely missing 
 		drop if allmissing==1
@@ -225,7 +229,7 @@ export excel using "$chartbookdir/Ghana_PREM_Pilot_Chartbook_WORKING.xlsx", shee
 		duplicates tag A004 A005  A007, gen(duplicate) 
 		
 		*****CHECK HERE: 	
-		tab duplicate, m		
+		tab duplicate, m				
 		*	there should be no 1 or higher 
 		* 	if there is any, 
 		*	the following will identify the latest entry for the duplicates
@@ -240,6 +244,65 @@ export excel using "$chartbookdir/Ghana_PREM_Pilot_Chartbook_WORKING.xlsx", shee
 			* REFERENCE: https://www.stata.com/manuals13/ddatetime.pdf#ddatetime
 			*/
 			
+		/*EDIT 1/10/2024 STARTS*/
+		
+			/*
+			Results as of 1/10/2024
+			THERE ARE SO MANY DUPLICATES! 
+			Further investigation suggests that A007 is not unique... 
+			As an attempt to rescue, add q3* in detecting duplicates. 
+			But, that focuses on completed calls... i.e., for we will underestimate "call attempts"... ugh... 
+			.                 *****CHECK HERE:        
+			.                 tab duplicate, m                
+
+			  duplicate |      Freq.     Percent        Cum.
+			------------+-----------------------------------
+					  0 |        717       67.77       67.77
+					  1 |        156       14.74       82.51
+					  2 |         57        5.39       87.90
+					  3 |         40        3.78       91.68
+					  4 |         35        3.31       94.99
+					  5 |         12        1.13       96.12
+					  6 |         21        1.98       98.11
+					  7 |          8        0.76       98.87
+					 11 |         12        1.13      100.00
+			------------+-----------------------------------
+				  Total |      1,058      100.00			
+			*/
+			
+		capture drop duplicate
+		duplicates tag A004 A005  A007 Q301 Q302 Q303 Q403b, gen(duplicate) 
+		tab duplicate, m	
+		tab duplicate Q403b, m	
+		
+			/*
+			.                 tab duplicate, m        
+
+			  duplicate |      Freq.     Percent        Cum.
+			------------+-----------------------------------
+					  0 |        970       91.68       91.68
+					  1 |         60        5.67       97.35
+					  2 |         24        2.27       99.62
+					  3 |          4        0.38      100.00
+			------------+-----------------------------------
+				  Total |      1,058      100.00
+
+			.                 tab duplicate Q403b, m  
+
+					   |                               Q403b
+			 duplicate |                   A1         A2         A3         A4         A5 |     Total
+			-----------+------------------------------------------------------------------+----------
+					 0 |       526        356         14          7         34         33 |       970 
+					 1 |        54          4          0          0          0          2 |        60 
+					 2 |        24          0          0          0          0          0 |        24 
+					 3 |         4          0          0          0          0          0 |         4 
+			-----------+------------------------------------------------------------------+----------
+				 Total |       608        360         14          7         34         35 |     1,058 
+
+			*/
+				
+		/*EDIT 1/10/2024 PAUSES*/
+		
 			*** 1. check specification
 			rename submitdate submitdate_string	/*rename to str*/		
 			codebook submitdate_string /*identify format/structure of the string*/
@@ -253,46 +316,58 @@ export excel using "$chartbookdir/Ghana_PREM_Pilot_Chartbook_WORKING.xlsx", shee
 			format submitdate %tc 
 			list submitdate* in 1/5			
 				
-		sort A004 A005  A007 submitdate
-		list A004 A005  A007 submitdate if duplicate!=0  
+		sort A001 duplicate A004 A005  A007 submitdate
+		*list A004 A005  A007 submitdate if duplicate!=0  /*EDIT 1/10/2024*/
+		list A001 duplicate A004 A005  A007 A008 submitdate Q301 Q302 Q303 Q403b if duplicate!=0 /*EDIT 1/10/2024*/		
+	
 		*****CHECK HERE: 
 		*	check submitdate within each repeated client, 
 		*	Again, in the mock dataset, 
 		*	there are two clients that have three data entries for practice purpose. 
 
 		*****drop duplicates before the latest submission 
-		egen double submitdatelatest = max(submitdate) if duplicate!=0, ///
-			by(A004 A005  A007) /*LATEST TIME WITHIN EACH DUPLICATE*/					
+		egen double submitdatelatest = max(submitdate) if duplicate!=0, ///			
+			by(A004 A005  A007 Q301 Q302 Q303 Q403b) /*LATEST TIME WITHIN EACH DUPLICATE*/	/*EDIT 1/10/2024*/
+			*by(A004 A005  A007) /*LATEST TIME WITHIN EACH DUPLICATE*/	/*EDIT 1/10/2024*/
 						
 			*format %tcnn/dd/ccYY_hh:MM submitdatelatest /*"format line without seconds*/
 			format %tcnn/dd/ccYY_hh:MM:SS submitdatelatest /*"format line with seconds*/
 			
 			sort A004 A005  A007 submitdate
-			list A004 A005  A007 submitdate* if duplicate!=0  
+			*list A004 A005  A007 submitdate* if duplicate!=0  /*EDIT 1/10/2024*/
+			list A004 A005  A007 submitdate* Q301 Q302 Q303 Q403b if duplicate!=0  /*EDIT 1/10/2024*/
 			
 	* B.4.f drop duplicates
 	
 		drop if duplicate!=0  & submitdate!=submitdatelatest 
 		
 		*****confirm there's no duplicate cases, based on facility code
-		duplicates report A004 A005  A007,
+		*duplicates report A004 A005  A007, /*EDIT 1/10/2024*/
+		duplicates report A004 A005  A007 Q301 Q302 Q303 Q403b, /*EDIT 1/10/2024*/
 		*****CHECK HERE: 
 		*	Now there should be no duplicate, yay!!   
 
-		drop duplicate submitdatelatest
+		/*EDIT 1/10/2024 RESUMES*/
+		capture drop duplicate
+		duplicates tag A004 A005  A007 Q301 Q302 Q303 Q403b, gen(duplicate) 
+		tab duplicate, m	
+		
+		sort A001 duplicate A004 A005  A007 submitdate		
+		list A001 duplicate A004 A005  A007 A008 submitdate Q301 Q302 Q303 Q403b if duplicate!=0 
+		
+			egen temp = concat(A004 A005  A007 Q301 Q302 Q303 Q403b)
+			codebook temp
+			sort temp
+			by temp: gene tempnum=_n
+			
+		tab duplicate tempnum, m
+		
+		drop if duplicate!=0 & tempnum==2
+		
+		/*EDIT 1/10/2024 ENDS*/
+		
+		drop duplicate submitdatelatest temp tempnum
 
-	/*
-	. tab A001 limesurveyform, m
-
-			   |    limesurveyform
-		  A001 |   English        Twi |     Total
-	-----------+----------------------+----------
-			A1 |         4          4 |         8 
-			A2 |       174        185 |       359 
-	-----------+----------------------+----------
-		 Total |       178        189 |       367 
-
-	*/ 
 **************************************************************
 * C. Data cleaning - variables 
 **************************************************************
@@ -969,6 +1044,13 @@ import excel "$chartbookdir/Ghana_PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Fac
 	
 		sum y_overall
 		
+	***** catch any N/As not recoded to missing yet /*Edit 1/3/2024*/	
+	sum y_*
+	foreach var of varlist y_*{
+		recode `var' 6=0
+	}
+	sum y_*	
+	
 	*****************************
 	* Section 1: Scale
 	*****************************			
@@ -1029,6 +1111,12 @@ import excel "$chartbookdir/Ghana_PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Fac
 		gen y_well_fresh = q204
 		gen y_well_interst = q205
 		
+		/*REVISION 2/1/2024 STARTS*/
+		foreach var of varlist y_well_*{
+		replace `var' = `var' - 1
+		}		
+		/*REVISION 2/1/2024 ENDS*/
+		
 		egen yy_wellbeing = rowtotal(y_well*)
 			replace yy_wellbeing = yy_wellbeing*4 
 			
@@ -1040,7 +1128,7 @@ import excel "$chartbookdir/Ghana_PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Fac
 	* Interview results
 	*****************************
 
-		gen xcomplete=q403==1
+		gen xcomplete= q001==1 & q403==1
 		
 		tab q403 zdistrict, m
 		bysort zdistrict: tab mode language, m
