@@ -99,7 +99,7 @@ local month 			 12 /*month of the mid point in data collection*/
 local surveyid_EN 		 189817 /*LimeSurvey survey ID for ENGLISH form*/
 local surveyid_CL 		 469495 /*LimeSurvey survey ID for BEMBA form*/
 
-local startdate 	 	 20231216 /*First date of the actual listing - in YYYYMMDD */ 
+local startdate 	 	 20231216 /*First date of the actual interview - in YYYYMMDD */ 
 
 *** Define local macro for response options specific to the country 
 
@@ -156,12 +156,59 @@ export delimited using "$downloadcsvdir/LimeSurvey_PREM_`country'_R`round'_BEMBA
 	
 		tab limesurveyform, m
 		tab limesurveyform Q001, m
-		tab limesurveyform Q401, m	
-
+		bysort limesurveyform: tab Q001 Q403a, m	
+		
 *****B.2. Export/save the data daily in CSV form with date 	
 
 * export delimited using "$downloadcsvdir/LimeSurvey_PREM_`country'_R`round'_$date.csv", replace
 * See above, now we export dataset by language 12/18/2023
+
+* EDIT 1/4/2024: previously section E.0.	
+*****B.3.A. Drop data that were entered for practice and test <= ACTIVATE THIS SECTION WHEN WORKING WITH REAL DATA
+
+	codebook A002
+	gen double interviewdate 	= dofc(clock(A002, "YMD hms")) 
+	format interviewdate  %td
+	
+		tab interviewdate, m
+		
+	drop if interviewdate < date("`startdate'","YMD") 
+		tab interviewdate, m
+
+* EDIT 1/4/2024: new section
+*****B.3.B. Edit data 
+/* 
+Background: 
+Sample-number (A007) was not unique anymore in cases from 
+the ADDITIONAL listing/sampling done after the first phase of data collection. UGH...
+This CAN incorrectly determine unique case as a duplicate 
+
+Suggested solution:
+After further investigation (see Zambia_PREM_Pilot_PREP_FOR_DATAEIT.do), 
+once combined with district and facilityid, 
+we could save 17 by replacing sample_number (A007 = A007 + 9000, something outside the current range).
+
+Action: 
+Identification and recoding is done in a separate do file. 
+
+Limitations: 
+This approach is a bandage first aid, rather than systematic fix - which would take 
+much longer time but still would have uncertainty. 
+It focuses on not losing completed interviews. 
+
+Note: this does not mean the FINAL total number of completed interviews will go up by 17,  
+because we lose some during the merge process - due to data entry errors in facilityid 
+*/
+
+egen temp=concat(A004 A005 A007)
+codebook A007 temp
+drop temp
+
+do Zambia_PREM_Pilot_DataManagement_WORKING_DATAEDIT.do
+
+egen temp=concat(A004 A005 A007)
+codebook A007 temp
+drop temp
 
 *****B.3. Export the data to chartbook  	
 
@@ -719,20 +766,8 @@ import excel "$chartbookdir/Zambia_PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Fa
 * E. Create analytical variables 
 **************************************************************
 
-*
 ***** E.0 Drop data that were entered for practice and test <= ACTIVATE THIS SECTION WHEN WORKING WITH REAL DATA
-
-	codebook a002
-	gen double interviewdate 	= dofc(clock(a002, "YMD hms")) 
-	*gen listingdate = dofc(submitdate) 
-	format interviewdate  %td
-	
-		tab interviewdate, m
-		
-	drop if interviewdate < date("`startdate'","YMD") 
-		tab interviewdate, m
-		
-*
+* EDIT 1/4/2024: Now moved up to B.3.A 
 
 *****E.1. Construct analysis variables 
 
@@ -909,6 +944,13 @@ import excel "$chartbookdir/Zambia_PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Fa
 	
 		sum y_overall
 		
+	***** catch any N/As not recoded to missing yet /*Edit 1/3/2024*/	
+	sum y_*
+	foreach var of varlist y_*{
+		recode `var' 6=0
+	}
+	sum y_*		
+		
 	*****************************
 	* Section 1: Scale
 	*****************************			
@@ -969,6 +1011,12 @@ import excel "$chartbookdir/Zambia_PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Fa
 		gen y_well_fresh = q204
 		gen y_well_interst = q205
 		
+		/*REVISION 2/1/2024 STARTS*/
+		foreach var of varlist y_well_*{
+		replace `var' = `var' - 1
+		}		
+		/*REVISION 2/1/2024 ENDS*/		
+		
 		egen yy_wellbeing = rowtotal(y_well*)
 			replace yy_wellbeing = yy_wellbeing*4 
 			
@@ -979,9 +1027,9 @@ import excel "$chartbookdir/Zambia_PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Fa
 	*****************************
 	* Interview results
 	*****************************
-
-		gen xcomplete=q403==1
-	
+		
+		gen xcomplete= q001==1 & q403==1
+		
 			tab xcomplete language, m
 			/*
 				.         tab xcomplete language, m

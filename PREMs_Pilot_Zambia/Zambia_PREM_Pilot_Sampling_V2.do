@@ -426,21 +426,23 @@ import excel "$chartbookdir/Zambia_PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Fa
 
 			listingdate |      Freq.     Percent        Cum.
 			------------+-----------------------------------
-			  27nov2023 |          6        0.52        0.52
-			  06dec2023 |          7        0.61        1.14
-			  07dec2023 |         61        5.33        6.47
-			  08dec2023 |        233       20.37       26.84
-			  09dec2023 |        192       16.78       43.62
-			  10dec2023 |         79        6.91       50.52
-			  11dec2023 |         77        6.73       57.26
-			  12dec2023 |        133       11.63       68.88
-			  13dec2023 |         79        6.91       75.79
-			  14dec2023 |         48        4.20       79.98
-			  20dec2023 |         17        1.49       81.47
-			  21dec2023 |        136       11.89       93.36
-			  22dec2023 |         76        6.64      100.00
+			  27nov2023 |          6        0.51        0.51
+			  06dec2023 |          7        0.60        1.11
+			  07dec2023 |         61        5.22        6.33
+			  08dec2023 |        233       19.93       26.26
+			  09dec2023 |        192       16.42       42.69
+			  10dec2023 |         79        6.76       49.44
+			  11dec2023 |         77        6.59       56.03
+			  12dec2023 |        133       11.38       67.41
+			  13dec2023 |         79        6.76       74.17
+			  14dec2023 |         48        4.11       78.27
+			  20dec2023 |         17        1.45       79.73
+			  21dec2023 |        136       11.63       91.36
+			  22dec2023 |         81        6.93       98.29
+			  23dec2023 |         20        1.71      100.00
 			------------+-----------------------------------
-				  Total |      1,144      100.00
+				  Total |      1,169      100.00
+
 
 			*/
 			
@@ -466,9 +468,11 @@ import excel "$chartbookdir/Zambia_PREM_Pilot_Chartbook_WORKING.xlsx", sheet("Fa
 			 14dec2023 |         0         48 |        48 
 			 20dec2023 |        17          0 |        17 
 			 21dec2023 |       136          0 |       136 
-			 22dec2023 |        76          0 |        76 
+			 22dec2023 |        81          0 |        81 
+			 23dec2023 |        20          0 |        20 
 			-----------+----------------------+----------
-				 Total |       229        915 |     1,144 
+				 Total |       254        915 |     1,169 
+
 	
 			*/		
 
@@ -500,11 +504,24 @@ save "$listingdatadir/PREM_`country'_R`round'_LIST_$date.dta", replace
 
 use "$listingdatadir/PREM_`country'_R`round'_LIST_$date.dta", clear
 	
+	* Check there are no late evening listing that are not included in the previous date's sample list 
 	tab listingdate listinginfocomplete, m
 
-
 		/*
-				.         tab listingdate listinginfocomplete, m
+		*TAB created on DEC22
+		.         tab listingdate listinginfocomplete, m
+
+		listingdat |  listinginfocomplete
+				 e |         0          1 |     Total
+		-----------+----------------------+----------
+		 20dec2023 |         0         17 |        17 
+		 21dec2023 |        15        121 |       136 
+		 22dec2023 |         1         80 |        81 <=
+		-----------+----------------------+----------
+			 Total |        16        218 |       234 
+		
+		*TAB created on DEC23
+		.         tab listingdate listinginfocomplete, m
 
 		listingdat |  listinginfocomplete
 				 e |         0          1 |     Total
@@ -512,8 +529,9 @@ use "$listingdatadir/PREM_`country'_R`round'_LIST_$date.dta", clear
 		 20dec2023 |         0         17 |        17 
 		 21dec2023 |        15        121 |       136 
 		 22dec2023 |         1         80 |        81 
+		 23dec2023 |         0         20 |        20 
 		-----------+----------------------+----------
-			 Total |        16        218 |       234 
+			 Total |        16        238 |       254 
 
 		sort submitdate
 		bysort listingdate: list formid submitdate* phonenumber if listinginfocomplete==1
@@ -529,20 +547,22 @@ keep if listinginfocomplete==1
 /* EDIT 12/21/2023 TO SAMPLE DAILY STARTS */
 * Create sample list for each day after the 
 
-*keep if listingdate == date(c(current_date), "DMY")
+keep if listingdate == date(c(current_date), "DMY")
 /* EDIT 12/21/2023 ENDS */
 
-/* EDIT JUST ONLY for Dec22 
-* in order to capture listing done in the evening of Dec21 - see below */
+/* EDIT JUST ONLY for Dec22 */
+* in order to capture listing done in the evening of Dec21 - see below 
 * Otherwise use the above single line code: keep if listingdate == date(c(current_date), "DMY")
 	
+/*	
 	sort submitdate_string 
 	bysort listingdate: list formid submitdate* phonenumber			
 		
 	capture drop temp
-	gen byte temp = listingdatetime <= clock("2023-12-21 17:27:35", "YMD hms")
+	*gen byte temp = listingdatetime <= clock("2023-12-21 17:27:35", "YMD hms")
+	gen byte temp = listingdatetime <= clock("2023-12-22 17:24:16", "YMD hms")
 		tab listingdate temp, m	
-	
+
 		/*
 		.                 tab listingdate temp, m 
 
@@ -554,17 +574,31 @@ keep if listinginfocomplete==1
 		 22dec2023 |        80          0 |        80 
 		-----------+----------------------+----------
 			 Total |       107        111 |       218 
+			 
+		.                 tab listingdate temp, m 
+
+		listingdat |         temp
+				 e |         0          1 |     Total
+		-----------+----------------------+----------
+		 20dec2023 |         0         17 |        17 
+		 21dec2023 |         0        121 |       121 
+		 22dec2023 |         0         80 |        80 
+		 23dec2023 |        19          0 |        19 
+		-----------+----------------------+----------
+			 Total |        19        218 |       237 
+			 
 
 		
 		*/
-	
-drop if listingdatetime <= clock("2023-12-21 17:27:35", "YMD hms") /*last sample included in Dec21*/
-/*END OF Dec22 Edit*/
 
-	tab listingdate, m
-	
-		/*			 
-			
+*drop if listingdatetime <= clock("2023-12-21 17:27:35", "YMD hms") /*last sample included on Dec21*/
+*drop if listingdatetime <= clock("2023-12-22 17:24:16", "YMD hms") /*last sample included on Dec22*/
+/*END OF Dec22 Edit*/
+*/
+
+		/* Sample created on DEC 21*/		 
+{		
+/*	
 				use "$listingdatadir/PREM_Zambia_RP_SAMPLE_ALL_21Dec2023.dta", clear
 				tab listingdate, m
 					/*
@@ -599,9 +633,54 @@ drop if listingdatetime <= clock("2023-12-21 17:27:35", "YMD hms") /*last sample
 					107. |   1661   2023-12-21 17:25:39   21dec2023 17:25:39 |
 					108. |   1662   2023-12-21 17:27:35   21dec2023 17:27:35 |
 					*/				  
+*/
+}				
 				
-		*/		
+		/* Sample created on DEC 22*/
+{	
+/*		
+				use "$listingdatadir/PREM_Zambia_RP_SAMPLE_ALL_22Dec2023.dta", clear
+				tab listingdate, m
+					/*
+					.                                 tab listingdate, m
 
+					listingdate |      Freq.     Percent        Cum.
+					------------+-----------------------------------
+					  21dec2023 |         27       25.23       25.23
+					  22dec2023 |         80       74.77      100.00
+					------------+-----------------------------------
+						  Total |        107      100.00
+					*/
+				
+				use "$listingdatadir/PREM_Zambia_RP_LIST_22Dec2023.dta", clear
+				tab listingdate, m
+							
+				sort submitdate_string 
+				bysort listingdate: list formid submitdate* phonenumber if listinginfocomplete==1
+				
+					/*
+					.                                 tab listingdate, m
+
+					listingdate |      Freq.     Percent        Cum.
+					------------+-----------------------------------
+					  21dec2023 |         27       25.23       25.23
+					  22dec2023 |         80       74.77      100.00
+					------------+-----------------------------------
+						  Total |        107      100.00
+
+						 |---------------------------------------------------------------|
+					 77. |   1799   2023-12-22 15:26:44   22dec2023 15:26:44   776900837 |
+					 78. |   1800   2023-12-22 15:31:12   22dec2023 15:31:12   974636346 |
+					 79. |   1803   2023-12-22 17:19:45   22dec2023 17:19:45   975561319 |
+					 80. |   1805   2023-12-22 17:22:14   22dec2023 17:22:14   979626464 |
+					 81. |   1806   2023-12-22 17:24:16   22dec2023 17:24:16   977904263 |
+						 +---------------------------------------------------------------+
+					*/				  
+*/
+}				
+
+	tab listingdate, m
+		
 	*** Add 0 infront of the phone number (COUNTRY SPECIFIC)
 	gen zero = "0"
 	egen phonenumbertemp = concat(zero phonenumber)
